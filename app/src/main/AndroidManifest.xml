@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FinalLib">
+
+        <activity
+            android:name=".auth.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".auth.RegisterActivity"
+            android:exported="false"
+            android:label="Đăng Ký Tài Khoản"
+            android:parentActivityName=".auth.LoginActivity" />
+
+        <activity
+            android:name=".main.MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".auth.ChangePasswordActivity"
+            android:exported="false"
+            android:label="Đổi Mật Khẩu"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity
+            android:name=".admin.SystemLogActivity"
+            android:exported="false"
+            android:label="Nhật ký hệ thống"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity android:name=".auth.RegisterSellerActivity"
+            android:label="Đăng ký bán hàng"
+            android:parentActivityName=".main.MainActivity"/>
+
+        <activity android:name=".admin.AdminNotificationActivity"
+            android:label="Duyệt yêu cầu"
+            android:parentActivityName=".main.MainActivity"/>
+
+    </application>
+
+</manifest>
