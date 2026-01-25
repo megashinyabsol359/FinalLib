@@ -21,6 +21,7 @@ import com.example.finallib.auth.ChangePasswordActivity
 import com.example.finallib.auth.RegisterSellerActivity
 import com.example.finallib.admin.SystemLogActivity
 import com.example.finallib.admin.AdminNotificationActivity
+import com.example.finallib.search.SearchActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -64,6 +65,11 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> {
                     // Xử lý chuyển fragment nếu cần
+                }
+
+                // Tìm kiếm
+                R.id.nav_search -> {
+                    startActivity(Intent(this, SearchActivity::class.java))
                 }
 
                 // User: Đăng ký bán hàng

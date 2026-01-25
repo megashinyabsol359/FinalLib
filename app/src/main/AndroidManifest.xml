@@ -53,6 +53,12 @@
             android:label="Duyệt yêu cầu"
             android:parentActivityName=".main.MainActivity"/>
 
+        <activity
+            android:name=".search.SearchActivity"
+            android:exported="false"
+            android:label="Tìm kiếm"
+            android:parentActivityName=".main.MainActivity" />
+
     </application>
 
 </manifest>

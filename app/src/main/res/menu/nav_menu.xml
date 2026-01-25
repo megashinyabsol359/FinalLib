@@ -8,6 +8,11 @@
             android:title="Tủ sách" />
 
         <item
+            android:id="@+id/nav_search"
+            android:icon="@android:drawable/ic_menu_search"
+            android:title="Tìm kiếm" />
+
+        <item
             android:id="@+id/nav_register_seller"
             android:icon="@android:drawable/ic_menu_send"
             android:title="Đăng ký bán hàng"
