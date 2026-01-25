@@ -59,6 +59,12 @@
             android:label="Tìm kiếm"
             android:parentActivityName=".main.MainActivity" />
 
+        <activity
+            android:name=".search.BookDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết sách"
+            android:parentActivityName=".search.SearchActivity" />
+
     </application>
 
 </manifest>
