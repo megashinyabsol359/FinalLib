@@ -1,22 +1,26 @@
 package com.example.finallib.auth
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.example.finallib.R
 import com.example.finallib.model.SellerRequest
 import com.example.finallib.model.SystemLog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class RegisterSellerActivity : AppCompatActivity() {
+class RegisterSellerFragment : Fragment(R.layout.activity_register_seller) {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_register_seller)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        val btnSend = findViewById<Button>(R.id.btn_send_request)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Đăng ký bán hàng"
+
+        // Tìm view từ biến 'view'
+        val btnSend = view.findViewById<Button>(R.id.btn_send_request)
 
         btnSend.setOnClickListener {
             sendRequest()
@@ -31,7 +35,7 @@ class RegisterSellerActivity : AppCompatActivity() {
             db.collection("users").document(user.uid).get().addOnSuccessListener { doc ->
                 val name = doc.getString("fullName") ?: "No Name"
 
-                // Request object
+                // Tạo request object
                 val request = SellerRequest(
                     userId = user.uid,
                     userEmail = user.email ?: "",
@@ -41,13 +45,17 @@ class RegisterSellerActivity : AppCompatActivity() {
 
                 db.collection("seller_requests").add(request)
                     .addOnSuccessListener {
-                        Toast.makeText(this, "Đã gửi yêu cầu thành công!", Toast.LENGTH_SHORT).show()
+                        // Dùng requireContext() để hiện thông báo
+                        Toast.makeText(requireContext(), "Đã gửi yêu cầu thành công!", Toast.LENGTH_SHORT).show()
 
                         // Ghi log
                         val log = SystemLog(user.uid, user.email?:"", name, "User", "REQUEST_SELLER", "Xin làm Seller")
                         db.collection("system_logs").add(log)
 
-                        finish() // Đóng màn hình
+                        parentFragmentManager.popBackStack()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
                     }
             }
         }
