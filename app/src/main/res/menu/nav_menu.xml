@@ -8,6 +8,11 @@
             android:title="Tủ sách" />
 
         <item
+            android:id="@+id/nav_upload_book"
+            android:icon="@android:drawable/ic_menu_upload"
+            android:title="Upload Sách" />
+
+        <item
             android:id="@+id/nav_search"
             android:icon="@android:drawable/ic_menu_search"
             android:title="Tìm kiếm" />

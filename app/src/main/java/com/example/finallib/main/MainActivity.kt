@@ -1,16 +1,20 @@
 package com.example.finallib.main
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import com.example.finallib.R
 import com.example.finallib.library.LibraryFragment
+import com.example.finallib.utils.CloudinaryConfig
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,10 +31,24 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
+    private var uploadDialog: UploadBookDialog? = null
+
+    // File picker để chọn file sách
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val fileName = getFileNameFromUri(it)
+            uploadDialog?.setSelectedFile(it, fileName)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Khởi tạo Cloudinary config
+        CloudinaryConfig.initialize(this)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -65,6 +83,10 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> {
                     // Xử lý chuyển fragment nếu cần
+                }
+
+                R.id.nav_upload_book -> {
+                    showUploadDialog()
                 }
 
                 // Tìm kiếm
@@ -109,6 +131,33 @@ class MainActivity : AppCompatActivity() {
                 .commit()
             navView.setCheckedItem(R.id.nav_home)
         }
+    }
+
+    private fun showUploadDialog() {
+        uploadDialog = UploadBookDialog(
+            context = this,
+            lifecycleScope = lifecycleScope,
+            fileLauncher = filePickerLauncher,
+            onSuccess = { docId ->
+                // Callback khi upload thành công
+            }
+        )
+        uploadDialog?.show()
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var fileName = "book_file"
+        try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                it.moveToFirst()
+                fileName = it.getString(nameIndex)
+            }
+        } catch (e: Exception) {
+            fileName = uri.lastPathSegment ?: "book_file"
+        }
+        return fileName
     }
 
     private fun updateNavHeader() {
