@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.finallib.R
 import com.example.finallib.library.LibraryFragment
@@ -65,25 +66,27 @@ class MainActivity : AppCompatActivity() {
         toggle.syncState()
 
         updateNavHeader()
-
         checkUserRole()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                     drawerLayout.closeDrawer(GravityCompat.START)
-                } else {
+                }
+                else if (supportFragmentManager.backStackEntryCount > 0) {
+                    supportFragmentManager.popBackStack()
+                }
+                else {
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
                 }
             }
         })
 
+        // Menu
         navView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> {
-                    // Xử lý chuyển fragment nếu cần
-                }
+                R.id.nav_home -> replaceFragment(LibraryFragment())
 
                 R.id.nav_upload_book -> {
                     showUploadDialog()
@@ -95,24 +98,18 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // User: Đăng ký bán hàng
-                R.id.nav_register_seller -> {
-                    startActivity(Intent(this, RegisterSellerActivity::class.java))
-                }
+                R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment())
 
                 // Admin: Duyệt đơn
-                R.id.nav_admin_noti -> {
-                    startActivity(Intent(this, AdminNotificationActivity::class.java))
-                }
+                R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment())
 
-                // ADMIN: Xem Log
-                R.id.nav_logs -> {
-                    startActivity(Intent(this, SystemLogActivity::class.java))
-                }
+                // Admin: Xem Log
+                R.id.nav_logs -> replaceFragment(SystemLogFragment())
 
-                R.id.nav_change_pass -> {
-                    startActivity(Intent(this, ChangePasswordActivity::class.java))
-                }
+                // Chung: Đổi mật khẩu
+                R.id.nav_change_pass -> replaceFragment(ChangePasswordFragment())
 
+                // Đăng xuất (Thoát ra LoginActivity)
                 R.id.nav_logout -> {
                     FirebaseAuth.getInstance().signOut()
                     val intent = Intent(this, LoginActivity::class.java)
@@ -126,13 +123,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, LibraryFragment())
-                .commit()
+            replaceFragment(LibraryFragment())
             navView.setCheckedItem(R.id.nav_home)
         }
     }
 
+    private fun replaceFragment(fragment: Fragment) {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_container, fragment)
+        if (fragment !is LibraryFragment) {
+            transaction.addToBackStack(null)
+        }
+        transaction.commit()
+        
     private fun showUploadDialog() {
         uploadDialog = UploadBookDialog(
             context = this,
@@ -182,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Kiểm tra Role
+    // Phân quyền Menu
     private fun checkUserRole() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
@@ -193,12 +196,14 @@ class MainActivity : AppCompatActivity() {
                     val role = document.getString("role")
                     val menu = navView.menu
 
-                    if (role == "Admin") {
-                        menu.findItem(R.id.nav_logs)?.isVisible = true
-                        menu.findItem(R.id.nav_admin_noti)?.isVisible = true
-                    }
-                    else if (role == "User") {
-                        menu.findItem(R.id.nav_register_seller)?.isVisible = true
+                    when (role) {
+                        "Admin" -> {
+                            menu.findItem(R.id.nav_logs)?.isVisible = true
+                            menu.findItem(R.id.nav_admin_noti)?.isVisible = true
+                        }
+                        "User" -> {
+                            menu.findItem(R.id.nav_register_seller)?.isVisible = true
+                        }
                     }
                 }
         }

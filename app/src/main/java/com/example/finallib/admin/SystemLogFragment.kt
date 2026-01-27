@@ -1,27 +1,28 @@
-package com.example.finallib.admin // <--- Package chuẩn
+package com.example.finallib.admin
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
-import com.example.finallib.model.SystemLog // Import Model
+import com.example.finallib.model.SystemLog
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-class SystemLogActivity : AppCompatActivity() {
+class SystemLogFragment : Fragment(R.layout.activity_system_log) {
 
     private lateinit var recyclerView: RecyclerView
     private val logList = ArrayList<SystemLog>()
     private lateinit var adapter: LogAdapter
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_system_log)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        recyclerView = findViewById(R.id.recycler_logs)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView = view.findViewById(R.id.recycler_logs)
+
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         adapter = LogAdapter(logList)
         recyclerView.adapter = adapter
@@ -32,10 +33,9 @@ class SystemLogActivity : AppCompatActivity() {
     private fun loadLogs() {
         val db = FirebaseFirestore.getInstance()
 
-        // Lấy Log
         db.collection("system_logs")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(100) // Chỉ lấy 100 dòng cho nhẹ
+            .limit(100)
             .get()
             .addOnSuccessListener { documents ->
                 logList.clear()
@@ -46,7 +46,7 @@ class SystemLogActivity : AppCompatActivity() {
                 adapter.notifyDataSetChanged()
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Lỗi tải log: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Lỗi tải log: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
 }
