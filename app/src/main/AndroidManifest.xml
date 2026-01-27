@@ -65,6 +65,12 @@
             android:label="Chi tiết sách"
             android:parentActivityName=".search.SearchActivity" />
 
+        <activity
+            android:name=".search.BookReaderActivity"
+            android:exported="false"
+            android:label="Đọc sách"
+            android:parentActivityName=".search.BookDetailActivity" />
+
     </application>
 
 </manifest>

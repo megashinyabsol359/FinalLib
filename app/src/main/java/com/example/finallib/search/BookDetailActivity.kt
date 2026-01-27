@@ -1,21 +1,27 @@
 package com.example.finallib.search
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Review
+import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 class BookDetailActivity : AppCompatActivity() {
@@ -63,7 +69,7 @@ class BookDetailActivity : AppCompatActivity() {
         rvReviews.adapter = reviewAdapter
 
         btnRead.setOnClickListener {
-            Toast.makeText(this, "Chức năng đọc sách sẽ được thêm sau", Toast.LENGTH_SHORT).show()
+            downloadAndReadBook()
         }
 
         btnRating.setOnClickListener {
@@ -170,4 +176,60 @@ class BookDetailActivity : AppCompatActivity() {
         onBackPressedDispatcher.onBackPressed()
         return true
     }
+
+    private fun downloadAndReadBook() {
+        if (book.url.isEmpty()) {
+            Toast.makeText(this, "Sách này không có file để tải", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Hiện ProgressBar
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleLarge)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Đang tải sách...")
+            .setView(progressBar)
+            .setCancelable(false)
+            .show()
+
+        // Download file
+        lifecycleScope.launch(Dispatchers.IO) {
+            val fileName = "${book.id}_${book.title.replace(" ", "_")}.epub"
+            
+            val result = FileDownloadService.downloadFile(
+                context = this@BookDetailActivity,
+                fileUrl = book.url,
+                fileName = fileName
+            )
+
+            result.onSuccess { filePath ->
+                // Chuyển sang BookReaderActivity
+                val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
+                intent.putExtra("bookTitle", book.title)
+                intent.putExtra("tempFilePath", filePath)
+                startActivity(intent)
+
+                // Đóng dialog
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.dismiss()
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Sách tải thành công",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            result.onFailure { error ->
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.dismiss()
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi tải sách: ${error.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
 }
