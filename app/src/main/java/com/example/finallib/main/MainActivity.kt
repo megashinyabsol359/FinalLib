@@ -22,10 +22,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 
 import com.example.finallib.auth.LoginActivity
-import com.example.finallib.auth.ChangePasswordActivity
-import com.example.finallib.auth.RegisterSellerActivity
-import com.example.finallib.admin.SystemLogActivity
-import com.example.finallib.admin.AdminNotificationActivity
+import com.example.finallib.auth.ChangePasswordFragment
+import com.example.finallib.auth.RegisterSellerFragment
+import com.example.finallib.admin.SystemLogFragment
+import com.example.finallib.admin.AdminNotificationFragment
 import com.example.finallib.search.SearchActivity
 
 class MainActivity : AppCompatActivity() {
@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
             transaction.addToBackStack(null)
         }
         transaction.commit()
+    }
         
     private fun showUploadDialog() {
         uploadDialog = UploadBookDialog(

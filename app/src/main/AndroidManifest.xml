@@ -34,26 +34,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".auth.ChangePasswordActivity"
-            android:exported="false"
-            android:label="Đổi Mật Khẩu"
-            android:parentActivityName=".main.MainActivity" />
-
-        <activity
-            android:name=".admin.SystemLogActivity"
-            android:exported="false"
-            android:label="Nhật ký hệ thống"
-            android:parentActivityName=".main.MainActivity" />
-
-        <activity android:name=".auth.RegisterSellerActivity"
-            android:label="Đăng ký bán hàng"
-            android:parentActivityName=".main.MainActivity"/>
-
-        <activity android:name=".admin.AdminNotificationActivity"
-            android:label="Duyệt yêu cầu"
-            android:parentActivityName=".main.MainActivity"/>
-
-        <activity
             android:name=".search.SearchActivity"
             android:exported="false"
             android:label="Tìm kiếm"
