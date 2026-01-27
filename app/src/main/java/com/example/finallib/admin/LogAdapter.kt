@@ -1,4 +1,4 @@
-package com.example.finallib.admin // <--- Package chuẩn
+package com.example.finallib.admin
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
-import com.example.finallib.model.SystemLog // Import từ package model
+import com.example.finallib.model.SystemLog
 import java.text.SimpleDateFormat
 import java.util.Locale
 
