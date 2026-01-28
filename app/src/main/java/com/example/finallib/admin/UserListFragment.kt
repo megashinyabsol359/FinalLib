@@ -37,43 +37,36 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
 
         (activity as? AppCompatActivity)?.supportActionBar?.title = "Quản lý người dùng"
 
-        // Ánh xạ View
         recyclerView = view.findViewById(R.id.recycler_users)
         searchView = view.findViewById(R.id.search_view)
         spinnerRole = view.findViewById(R.id.spinner_role)
 
-        // Cấu hình RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-        // Khởi tạo Adapter với filteredList (ban đầu rỗng)
+        // Khởi tạo Adapter
         adapter = UserAdapter(filteredList, currentUserId) { selectedUser ->
             showUserDetailDialog(selectedUser)
         }
         recyclerView.adapter = adapter
 
-        // 1. Cấu hình Spinner (Bộ lọc Role)
         setupSpinner()
 
-        // 2. Cấu hình SearchView (Tìm kiếm)
         setupSearchView()
 
-        // 3. Tải dữ liệu
         loadUsers()
     }
 
     private fun setupSpinner() {
-        // Tạo danh sách lựa chọn
         val roles = listOf("Tất cả", "User", "Seller", "Admin")
         val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, roles)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerRole.adapter = spinnerAdapter
 
-        // Bắt sự kiện chọn item
         spinnerRole.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                currentRoleFilter = roles[position] // Lưu lại lựa chọn ("Tất cả", "User"...)
-                filterUsers() // Gọi hàm lọc
+                currentRoleFilter = roles[position]
+                filterUsers()
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -86,34 +79,30 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchText = newText ?: "" // Lưu lại từ khóa
-                filterUsers() // Gọi hàm lọc mỗi khi gõ chữ
+                currentSearchText = newText ?: ""
+                filterUsers()
                 return true
             }
         })
     }
 
-    // --- HÀM LỌC LOGIC (Quan trọng nhất) ---
+    // Hàm Filter
     private fun filterUsers() {
         filteredList.clear()
 
         val textToSearch = currentSearchText.lowercase().trim()
 
         for (user in originalList) {
-            // 1. Kiểm tra Role (Nếu chọn "Tất cả" thì bỏ qua kiểm tra role)
             val matchRole = if (currentRoleFilter == "Tất cả") true else (user.role == currentRoleFilter)
 
-            // 2. Kiểm tra Tên hoặc Email
             val matchName = user.fullName.lowercase().contains(textToSearch)
             val matchEmail = user.email.lowercase().contains(textToSearch)
 
-            // 3. Nếu thỏa mãn CẢ HAI điều kiện -> Thêm vào list
             if (matchRole && (matchName || matchEmail)) {
                 filteredList.add(user)
             }
         }
 
-        // Cập nhật lên giao diện
         adapter.updateList(filteredList)
     }
 
@@ -127,7 +116,6 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
                     val user = doc.toObject(User::class.java)
                     originalList.add(user)
                 }
-                // Tải xong thì lọc lần đầu (để hiện full danh sách)
                 filterUsers()
             }
             .addOnFailureListener {
@@ -142,7 +130,6 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
             Họ tên: ${user.fullName}
             Email: ${user.email}
             Vai trò: ${user.role}
-            ID: ${user.id}
         """.trimIndent()
         builder.setMessage(info)
         builder.setPositiveButton("Đóng") { dialog, _ -> dialog.dismiss() }
