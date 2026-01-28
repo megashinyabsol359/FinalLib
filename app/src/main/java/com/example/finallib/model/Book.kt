@@ -14,5 +14,7 @@ data class Book(
     val status: String = "pending",
     val uploadedAt: Long = System.currentTimeMillis(),
     val sellerId: String = "",
-    val uploadedBy: String = ""
+    val uploadedBy: String = "",
+    val accessibility: String = "public",
+    val price: Double = 0.0
 ) : Serializable

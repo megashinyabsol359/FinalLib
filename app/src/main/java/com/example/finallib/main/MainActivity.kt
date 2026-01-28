@@ -40,7 +40,13 @@ class MainActivity : AppCompatActivity() {
     ) { uri: Uri? ->
         uri?.let {
             val fileName = getFileNameFromUri(it)
-            uploadDialog?.setSelectedFile(it, fileName)
+            // Kiểm tra loại file (sách hay ảnh)
+            val mimeType = contentResolver.getType(it)
+            if (mimeType?.startsWith("image/") == true) {
+                uploadDialog?.setSelectedCover(it)
+            } else {
+                uploadDialog?.setSelectedFile(it, fileName)
+            }
         }
     }
 

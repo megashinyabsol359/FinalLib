@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.TextView
@@ -16,12 +17,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 import com.example.finallib.model.Book
+import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
 import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class BookDetailActivity : AppCompatActivity() {
@@ -47,6 +51,7 @@ class BookDetailActivity : AppCompatActivity() {
         supportActionBar?.title = book.title
 
         // Setup views
+        val ivCover: ImageView = findViewById(R.id.iv_book_cover_detail)
         val tvId: TextView = findViewById(R.id.tv_detail_id)
         val tvTitle: TextView = findViewById(R.id.tv_detail_title)
         val tvAuthor: TextView = findViewById(R.id.tv_detail_author)
@@ -56,6 +61,16 @@ class BookDetailActivity : AppCompatActivity() {
         val btnRating: Button = findViewById(R.id.btn_rating)
         val rvReviews: RecyclerView = findViewById(R.id.rv_reviews)
         val tvNoReviews: TextView = findViewById(R.id.tv_no_reviews)
+
+        // Load cover image
+        if (book.cover.isNotEmpty()) {
+            Glide.with(this)
+                .load(book.cover)
+                .centerCrop()
+                .into(ivCover)
+        } else {
+            ivCover.setImageResource(R.drawable.ic_launcher_foreground) // Fallback image
+        }
 
         tvId.text = "ID: ${book.id}"
         tvTitle.text = "Tiêu đề: ${book.title}"
@@ -78,6 +93,11 @@ class BookDetailActivity : AppCompatActivity() {
 
         // Fetch reviews
         fetchReviews(rvReviews, tvNoReviews)
+
+        // Check access for private books
+        if (book.accessibility == "private") {
+            checkAndSetupPrivateBookAccess(btnRead)
+        }
     }
 
     private fun showRatingDialog() {
@@ -225,6 +245,105 @@ class BookDetailActivity : AppCompatActivity() {
                     Toast.makeText(
                         this@BookDetailActivity,
                         "Lỗi tải sách: ${error.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun checkAndSetupPrivateBookAccess(btnRead: Button) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            // User not logged in, show purchase button
+            setupPurchaseButton(btnRead)
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val querySnapshot = db.collection("purchases")
+                    .whereEqualTo("bookId", book.id)
+                    .whereEqualTo("userId", currentUser.uid)
+                    .get()
+                    .await()
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (querySnapshot.isEmpty) {
+                        // User hasn't purchased, show purchase button
+                        setupPurchaseButton(btnRead)
+                    } else {
+                        // User has purchased, keep read button
+                        btnRead.text = "Đọc sách"
+                        btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
+                        btnRead.setOnClickListener {
+                            downloadAndReadBook()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi kiểm tra quyền truy cập: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    setupPurchaseButton(btnRead)
+                }
+            }
+        }
+    }
+
+    private fun setupPurchaseButton(btnRead: Button) {
+        btnRead.text = "Mua sách"
+        btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_orange_light))
+        btnRead.setOnClickListener {
+            purchaseBook(btnRead)
+        }
+    }
+
+    private fun purchaseBook(btnRead: Button) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để mua sách", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val purchase = Purchase(
+                    id = UUID.randomUUID().toString(),
+                    bookId = book.id,
+                    userId = currentUser.uid,
+                    purchasedAt = System.currentTimeMillis(),
+                    price = 0.0,
+                    paymentMethod = "test"
+                )
+
+                db.collection("purchases")
+                    .document(purchase.id)
+                    .set(purchase)
+                    .await()
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Mua sách thành công!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Change button back to read
+                    btnRead.text = "Đọc sách"
+                    btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
+                    btnRead.setOnClickListener {
+                        downloadAndReadBook()
+                    }
+                }
+            } catch (e: Exception) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi mua sách: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
