@@ -10,7 +10,7 @@ import com.example.finallib.R
 import com.example.finallib.model.SellerRequest
 import com.google.firebase.firestore.FirebaseFirestore
 
-class AdminNotificationFragment : Fragment(R.layout.activity_system_log) {
+class AdminNotificationFragment : Fragment(R.layout.fragment_system_log) {
 
     private lateinit var recyclerView: RecyclerView
     private val requestList = ArrayList<SellerRequest>()

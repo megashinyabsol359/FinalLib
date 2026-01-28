@@ -11,7 +11,7 @@ import com.example.finallib.model.SystemLog
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-class SystemLogFragment : Fragment(R.layout.activity_system_log) {
+class SystemLogFragment : Fragment(R.layout.fragment_system_log) {
 
     private lateinit var recyclerView: RecyclerView
     private val logList = ArrayList<SystemLog>()

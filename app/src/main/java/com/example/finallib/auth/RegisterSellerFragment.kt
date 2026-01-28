@@ -12,7 +12,7 @@ import com.example.finallib.model.SystemLog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class RegisterSellerFragment : Fragment(R.layout.activity_register_seller) {
+class RegisterSellerFragment : Fragment(R.layout.fragment_register_seller) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
