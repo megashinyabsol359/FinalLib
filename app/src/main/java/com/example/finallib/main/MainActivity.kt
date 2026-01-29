@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var uploadDialog: UploadBookDialog? = null
 
     // File picker để chọn file sách
+    // say hello
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
