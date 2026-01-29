@@ -14,7 +14,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.finallib.R
-import com.example.finallib.bookshelf.BookshelfFragment
+import com.example.finallib.library.LibraryFragment
 import com.example.finallib.utils.CloudinaryConfig
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
@@ -22,20 +22,18 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 
 import com.example.finallib.auth.LoginActivity
-
 import com.example.finallib.auth.ChangePasswordFragment
 import com.example.finallib.auth.RegisterSellerFragment
 import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
-import com.example.finallib.admin.UserListFragment
 import com.example.finallib.search.SearchActivity
+import com.example.finallib.admin.UserListFragment
+import com.example.finallib.bookshelf.BookshelfFragment
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
-
-
     private var uploadDialog: UploadBookDialog? = null
 
     // File picker để chọn file sách
@@ -44,7 +42,13 @@ class MainActivity : AppCompatActivity() {
     ) { uri: Uri? ->
         uri?.let {
             val fileName = getFileNameFromUri(it)
-            uploadDialog?.setSelectedFile(it, fileName)
+            // Kiểm tra loại file (sách hay ảnh)
+            val mimeType = contentResolver.getType(it)
+            if (mimeType?.startsWith("image/") == true) {
+                uploadDialog?.setSelectedCover(it)
+            } else {
+                uploadDialog?.setSelectedFile(it, fileName)
+            }
         }
     }
 
@@ -54,7 +58,6 @@ class MainActivity : AppCompatActivity() {
 
         // Khởi tạo Cloudinary config
         CloudinaryConfig.initialize(this)
-
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -97,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                     showUploadDialog()
                 }
 
-                // Tìm kiếm của nhân
+                // Tìm kiếm
                 R.id.nav_search -> {
                     startActivity(Intent(this, SearchActivity::class.java))
                 }
@@ -139,12 +142,11 @@ class MainActivity : AppCompatActivity() {
     private fun replaceFragment(fragment: Fragment) {
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.fragment_container, fragment)
-        if (fragment !is BookshelfFragment) {
+        if (fragment !is LibraryFragment) {
             transaction.addToBackStack(null)
         }
         transaction.commit()
     }
-
 
     private fun showUploadDialog() {
         uploadDialog = UploadBookDialog(
@@ -172,6 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
         return fileName
     }
+
     private fun updateNavHeader() {
         val user = FirebaseAuth.getInstance().currentUser
         val db = FirebaseFirestore.getInstance()
@@ -209,7 +212,6 @@ class MainActivity : AppCompatActivity() {
                         "Admin" -> {
                             menu.findItem(R.id.nav_logs)?.isVisible = true
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
-                            menu.findItem(R.id.nav_user_list)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true

@@ -10,18 +10,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.finallib.R
 import com.example.finallib.utils.FileUtils
+import com.example.finallib.utils.PublicationReaderService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-// --- 1. IMPORT CHÍNH XÁC CHO READIUM 3.X ---
-import org.readium.r2.navigator.epub.EpubNavigatorFragment
-import org.readium.r2.navigator.epub.EpubNavigatorFactory // <--- Class mới quan trọng
-import org.readium.r2.shared.publication.Publication
-import org.readium.r2.shared.util.asset.AssetRetriever
-import org.readium.r2.shared.util.http.DefaultHttpClient
-import org.readium.r2.streamer.PublicationOpener
-import org.readium.r2.streamer.parser.DefaultPublicationParser
 
 class LibraryFragment : Fragment(R.layout.fragment_library) {
 
@@ -52,32 +44,19 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
 
                 val bookFile = FileUtils.copyFileToInternalStorage(context, uri, "book.epub")
 
-                val httpClient = DefaultHttpClient()
-
-                val assetRetriever = AssetRetriever(context.contentResolver, httpClient)
-
-                val parser = DefaultPublicationParser(context, httpClient, assetRetriever, pdfFactory = null)
-                val opener = PublicationOpener(parser, contentProtections = emptyList())
-
-                val assetResult = assetRetriever.retrieve(bookFile)
-
-                assetResult.onFailure { error ->
-                    withContext(Dispatchers.Main) { tvStatus.text = "Lỗi file: $error" }
-                    return@launch
-                }
-
-                val asset = assetResult.getOrNull()!!
-
-                val publicationResult = opener.open(asset, allowUserInteraction = false)
-
-                publicationResult.onSuccess { publication ->
-                    withContext(Dispatchers.Main) {
-                        tvStatus.text = "Mở thành công: ${publication.metadata.title}"
-                        openReader(publication)
-                    }
-                }.onFailure { error ->
-                    withContext(Dispatchers.Main) {
-                        tvStatus.text = "Lỗi mở sách: $error"
+                PublicationReaderService.loadPublicationFromFile(context, bookFile.absolutePath) { result ->
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        result.onSuccess { publication ->
+                            tvStatus.text = "Mở thành công: ${publication.metadata.title}"
+                            PublicationReaderService.openReaderInFragment(
+                                publication = publication,
+                                fragmentManager = parentFragmentManager,
+                                containerId = R.id.fragment_container
+                            )
+                        }
+                        result.onFailure { error ->
+                            tvStatus.text = "Lỗi: ${error.message}"
+                        }
                     }
                 }
 
@@ -88,26 +67,5 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
                 }
             }
         }
-    }
-
-    private fun openReader(publication: Publication) {
-
-        val navigatorFactory = EpubNavigatorFactory(publication)
-        val fragmentFactory = navigatorFactory.createFragmentFactory(
-            initialLocator = null,
-            listener = null
-        )
-
-        parentFragmentManager.fragmentFactory = fragmentFactory
-
-        val fragment = parentFragmentManager.fragmentFactory.instantiate(
-            requireContext().classLoader,
-            EpubNavigatorFragment::class.java.name
-        )
-
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack("Reader")
-            .commit()
     }
 }

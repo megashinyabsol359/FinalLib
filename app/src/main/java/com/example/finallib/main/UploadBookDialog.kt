@@ -3,19 +3,20 @@ package com.example.finallib.main
 import android.app.Dialog
 import android.content.Context
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Tag
@@ -25,15 +26,10 @@ import com.example.finallib.utils.TagAdapter
 import com.example.finallib.utils.TagItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlin.jvm.java
-import kotlin.onFailure
-import kotlin.onSuccess
-import kotlin.text.isEmpty
-import kotlin.text.trim
-import kotlin.toString
 
 class UploadBookDialog(
     private val context: Context,
@@ -46,6 +42,7 @@ class UploadBookDialog(
     private lateinit var etAuthor: TextInputEditText
     private lateinit var etDescription: TextInputEditText
     private lateinit var btnSelectFile: Button
+    private lateinit var btnSelectCover: Button
     private lateinit var btnUpload: Button
     private lateinit var btnCancel: Button
     private lateinit var tvSelectedFile: TextView
@@ -53,10 +50,18 @@ class UploadBookDialog(
     private lateinit var progressBar: ProgressBar
     private lateinit var rvTags: RecyclerView
     private lateinit var tvNoTags: TextView
+    private lateinit var ivBookCover: ImageView
+    private lateinit var rgAccessibility: RadioGroup
+    private lateinit var rbPublic: RadioButton
+    private lateinit var rbPrivate: RadioButton
+    private lateinit var tilPrice: TextInputLayout
+    private lateinit var etPrice: TextInputEditText
 
     private var selectedFileUri: Uri? = null
     private var selectedFileName: String = ""
+    private var selectedCoverUri: Uri? = null
     private var selectedTags: List<String> = emptyList()
+    private var selectedAccessibility: String = "public"
     private var tagAdapter: TagAdapter? = null
 
     init {
@@ -68,7 +73,7 @@ class UploadBookDialog(
         dialog.setContentView(R.layout.dialog_upload_book_new)
         dialog.window?.setLayout(
             (context.resources.displayMetrics.widthPixels * 0.95).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
         // Bind views
@@ -76,6 +81,7 @@ class UploadBookDialog(
         etAuthor = dialog.findViewById(R.id.et_author)
         etDescription = dialog.findViewById(R.id.et_description)
         btnSelectFile = dialog.findViewById(R.id.btn_select_file)
+        btnSelectCover = dialog.findViewById(R.id.btn_select_cover)
         btnUpload = dialog.findViewById(R.id.btn_upload)
         btnCancel = dialog.findViewById(R.id.btn_cancel)
         tvSelectedFile = dialog.findViewById(R.id.tv_selected_file)
@@ -83,13 +89,37 @@ class UploadBookDialog(
         progressBar = dialog.findViewById(R.id.progress_bar)
         rvTags = dialog.findViewById(R.id.rv_tags)
         tvNoTags = dialog.findViewById(R.id.tv_no_tags)
+        ivBookCover = dialog.findViewById(R.id.iv_book_cover)
+        rgAccessibility = dialog.findViewById(R.id.rg_accessibility)
+        rbPublic = dialog.findViewById(R.id.rb_public)
+        rbPrivate = dialog.findViewById(R.id.rb_private)
+        tilPrice = dialog.findViewById(R.id.til_price)
+        etPrice = dialog.findViewById(R.id.et_price)
 
         // Setup RecyclerView
         rvTags.layoutManager = LinearLayoutManager(context)
 
+        // Setup RadioGroup listener for accessibility
+        rgAccessibility.setOnCheckedChangeListener { _, checkedId ->
+            selectedAccessibility = when (checkedId) {
+                R.id.rb_private -> {
+                    tilPrice.visibility = View.VISIBLE
+                    "private"
+                }
+                else -> {
+                    tilPrice.visibility = View.GONE
+                    "public"
+                }
+            }
+        }
+
         // Set click listeners
         btnSelectFile.setOnClickListener {
             fileLauncher.launch("*/*")
+        }
+
+        btnSelectCover.setOnClickListener {
+            fileLauncher.launch("image/*")
         }
 
         btnUpload.setOnClickListener {
@@ -118,9 +148,9 @@ class UploadBookDialog(
                 lifecycleScope.launch(Dispatchers.Main) {
                     if (tags.isEmpty()) {
                         tvNoTags.text = "Không có tags trong hệ thống"
-                        rvTags.visibility = View.GONE
+                        rvTags.visibility = android.view.View.GONE
                     } else {
-                        tvNoTags.visibility = View.GONE
+                        tvNoTags.visibility = android.view.View.GONE
                         tagAdapter = TagAdapter(tags) { selectedTagsList ->
                             selectedTags = selectedTagsList
                         }
@@ -141,6 +171,16 @@ class UploadBookDialog(
         if (uri != null) {
             tvSelectedFile.text = "✅ $fileName"
             tvSelectedFile.setTextColor(context.resources.getColor(android.R.color.holo_green_dark))
+        }
+    }
+
+    fun setSelectedCover(uri: Uri?) {
+        selectedCoverUri = uri
+        if (uri != null) {
+            Glide.with(context)
+                .load(uri)
+                .centerCrop()
+                .into(ivBookCover)
         }
     }
 
@@ -175,10 +215,32 @@ class UploadBookDialog(
             return
         }
 
+        // Validate price for private books
+        var price = 0.0
+        if (selectedAccessibility == "private") {
+            val priceStr = etPrice.text.toString().trim()
+            if (priceStr.isEmpty()) {
+                Toast.makeText(context, "Vui lòng nhập giá tiền cho sách Private", Toast.LENGTH_SHORT).show()
+                return
+            }
+            price = try {
+                priceStr.toDouble()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Giá tiền không hợp lệ", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (price <= 0) {
+                Toast.makeText(context, "Giá tiền phải lớn hơn 0", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+
         // Disable buttons & show progress
         btnSelectFile.isEnabled = false
+        btnSelectCover.isEnabled = false
         btnUpload.isEnabled = false
-        progressBar.visibility = View.VISIBLE
+        progressBar.visibility = android.view.View.VISIBLE
         tvUploadStatus.text = "Đang upload file lên Cloudinary..."
 
         // Start upload
@@ -190,16 +252,60 @@ class UploadBookDialog(
             )
 
             result.onSuccess { uploadedUrl ->
-                saveBookToDatabase(title, author, description, selectedTags, uploadedUrl)
+                // Nếu có ảnh bìa, upload ảnh bìa trước
+                if (selectedCoverUri != null) {
+                    uploadCoverImage(uploadedUrl, price)
+                } else {
+                    saveBookToDatabase(
+                        title, author, description, selectedTags, uploadedUrl, "", selectedAccessibility, price
+                    )
+                }
             }
 
             result.onFailure { error ->
                 lifecycleScope.launch(Dispatchers.Main) {
                     tvUploadStatus.text = "Lỗi: ${error.message}"
-                    progressBar.visibility = View.GONE
+                    progressBar.visibility = android.view.View.GONE
                     btnSelectFile.isEnabled = true
+                    btnSelectCover.isEnabled = true
                     btnUpload.isEnabled = true
                     Toast.makeText(context, "Lỗi upload: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun uploadCoverImage(fileUrl: String, price: Double) {
+        tvUploadStatus.text = "Đang upload ảnh bìa sách..."
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = CloudinaryUploadService.uploadFile(
+                context = context,
+                fileUri = selectedCoverUri!!,
+                fileName = "cover_" + System.currentTimeMillis()
+            )
+
+            result.onSuccess { coverUrl ->
+                saveBookToDatabase(
+                    etTitle.text.toString().trim(),
+                    etAuthor.text.toString().trim(),
+                    etDescription.text.toString().trim(),
+                    selectedTags,
+                    fileUrl,
+                    coverUrl,
+                    selectedAccessibility,
+                    price
+                )
+            }
+
+            result.onFailure { error ->
+                lifecycleScope.launch(Dispatchers.Main) {
+                    tvUploadStatus.text = "Lỗi upload ảnh bìa: ${error.message}"
+                    progressBar.visibility = android.view.View.GONE
+                    btnSelectFile.isEnabled = true
+                    btnSelectCover.isEnabled = true
+                    btnUpload.isEnabled = true
+                    Toast.makeText(context, "Lỗi upload ảnh: ${error.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -210,7 +316,10 @@ class UploadBookDialog(
         author: String,
         description: String,
         tags: List<String>,
-        fileUrl: String
+        fileUrl: String,
+        coverUrl: String = "",
+        accessibility: String = "public",
+        price: Double = 0.0
     ) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -226,9 +335,11 @@ class UploadBookDialog(
                     uploadedAt = System.currentTimeMillis(),
                     tags = tags,
                     language = "Tiếng Việt",
-                    cover = "",
+                    cover = coverUrl,
                     sellerId = userId,
-                    uploadedBy = currentUser?.email ?: ""
+                    uploadedBy = currentUser?.email ?: "",
+                    accessibility = accessibility,
+                    price = price
                 )
 
                 val result = FirebaseService.uploadBookData(newBook)
@@ -236,7 +347,7 @@ class UploadBookDialog(
                 result.onSuccess { docId ->
                     lifecycleScope.launch(Dispatchers.Main) {
                         tvUploadStatus.text = "✅ Upload thành công!"
-                        progressBar.visibility = View.GONE
+                        progressBar.visibility = android.view.View.GONE
                         Toast.makeText(
                             context,
                             "Sách đã được upload thành công",
@@ -245,7 +356,7 @@ class UploadBookDialog(
                         onSuccess(docId)
 
                         // Đóng dialog sau 1.5 giây
-                        Handler(Looper.getMainLooper()).postDelayed({
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                             dismiss()
                         }, 1500)
                     }
@@ -254,8 +365,9 @@ class UploadBookDialog(
                 result.onFailure { error ->
                     lifecycleScope.launch(Dispatchers.Main) {
                         tvUploadStatus.text = "Lỗi: ${error.message}"
-                        progressBar.visibility = View.GONE
+                        progressBar.visibility = android.view.View.GONE
                         btnSelectFile.isEnabled = true
+                        btnSelectCover.isEnabled = true
                         btnUpload.isEnabled = true
                         Toast.makeText(
                             context,
@@ -267,8 +379,9 @@ class UploadBookDialog(
             } catch (e: Exception) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     tvUploadStatus.text = "Lỗi: ${e.message}"
-                    progressBar.visibility = View.GONE
+                    progressBar.visibility = android.view.View.GONE
                     btnSelectFile.isEnabled = true
+                    btnSelectCover.isEnabled = true
                     btnUpload.isEnabled = true
                 }
             }

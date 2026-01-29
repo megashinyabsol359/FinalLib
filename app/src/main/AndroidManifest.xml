@@ -209,12 +209,22 @@
 
         <activity
             android:name=".search.SearchActivity"
-            android:label="Search" />
-
+            android:exported="false"
+            android:label="Tìm kiếm"
+            android:parentActivityName=".main.MainActivity" />
 
         <activity
             android:name=".search.BookDetailActivity"
-            android:label="BookDetail" />
+            android:exported="false"
+            android:label="Chi tiết sách"
+            android:parentActivityName=".search.SearchActivity" />
+
+        <activity
+            android:name=".search.BookReaderActivity"
+            android:exported="false"
+            android:label="Đọc sách"
+            android:parentActivityName=".search.BookDetailActivity" />
+
 
     </application>
 

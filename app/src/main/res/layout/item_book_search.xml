@@ -1,47 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@drawable/item_book_background">
+    android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/tv_book_title"
+    <LinearLayout
+        android:id="@+id/ll_book_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tiêu đề sách"
-        android:textSize="18sp"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@drawable/item_book_background">
+
+        <ImageView
+            android:id="@+id/iv_book_cover"
+            android:layout_width="80dp"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="Bìa sách"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_book_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tiêu đề sách"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tv_book_author"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tác giả"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tv_book_language"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ngôn ngữ"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tv_book_tags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tags"
+                android:textSize="12sp"
+                android:textColor="#999999"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Private badge -->
+    <TextView
+        android:id="@+id/tv_private_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PRIVATE"
+        android:textColor="#FF9800"
+        android:textSize="10sp"
         android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_marginBottom="6dp" />
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="3dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:background="@drawable/private_badge_background"
+        android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/tv_book_author"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tác giả"
-        android:textSize="14sp"
-        android:textColor="#666666"
-        android:layout_marginBottom="6dp" />
-
-    <TextView
-        android:id="@+id/tv_book_language"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Ngôn ngữ"
-        android:textSize="13sp"
-        android:textColor="#888888"
-        android:layout_marginBottom="6dp" />
-
-    <TextView
-        android:id="@+id/tv_book_tags"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tags"
-        android:textSize="12sp"
-        android:textColor="#999999"
-        android:maxLines="2"
-        android:ellipsize="end" />
-
-</LinearLayout>
+</FrameLayout>
