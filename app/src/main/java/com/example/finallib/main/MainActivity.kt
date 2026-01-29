@@ -1,38 +1,62 @@
 package com.example.finallib.main
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.finallib.R
 import com.example.finallib.library.LibraryFragment
+import com.example.finallib.utils.CloudinaryConfig
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 
 import com.example.finallib.auth.LoginActivity
-
 import com.example.finallib.auth.ChangePasswordFragment
 import com.example.finallib.auth.RegisterSellerFragment
 import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
+import com.example.finallib.search.SearchActivity
 import com.example.finallib.admin.UserListFragment
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
+    private var uploadDialog: UploadBookDialog? = null
+
+    // File picker để chọn file sách
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val fileName = getFileNameFromUri(it)
+            // Kiểm tra loại file (sách hay ảnh)
+            val mimeType = contentResolver.getType(it)
+            if (mimeType?.startsWith("image/") == true) {
+                uploadDialog?.setSelectedCover(it)
+            } else {
+                uploadDialog?.setSelectedFile(it, fileName)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Khởi tạo Cloudinary config
+        CloudinaryConfig.initialize(this)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -70,6 +94,15 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> replaceFragment(LibraryFragment())
+
+                R.id.nav_upload_book -> {
+                    showUploadDialog()
+                }
+
+                // Tìm kiếm
+                R.id.nav_search -> {
+                    startActivity(Intent(this, SearchActivity::class.java))
+                }
 
                 // User: Đăng ký bán hàng
                 R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment())
@@ -112,6 +145,33 @@ class MainActivity : AppCompatActivity() {
             transaction.addToBackStack(null)
         }
         transaction.commit()
+    }
+        
+    private fun showUploadDialog() {
+        uploadDialog = UploadBookDialog(
+            context = this,
+            lifecycleScope = lifecycleScope,
+            fileLauncher = filePickerLauncher,
+            onSuccess = { docId ->
+                // Callback khi upload thành công
+            }
+        )
+        uploadDialog?.show()
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var fileName = "book_file"
+        try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                it.moveToFirst()
+                fileName = it.getString(nameIndex)
+            }
+        } catch (e: Exception) {
+            fileName = uri.lastPathSegment ?: "book_file"
+        }
+        return fileName
     }
 
     private fun updateNavHeader() {
