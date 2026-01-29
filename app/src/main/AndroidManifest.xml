@@ -39,9 +39,6 @@
             android:name=".main.MainActivity"
             android:exported="false" />
 
-
-
-
         <activity
             android:name=".utils.ImportActivity"
             android:launchMode="singleInstance"
@@ -49,67 +46,28 @@
             android:theme="@android:style/Theme.NoDisplay"
             android:exported="true">
 
-            <!--
-            WARNING: Matching with intent-filters on media types and file extensions is a mess.
-            This is very sensitive, therefore change these settings with care.
-
-            1. Don't mix the SEND and the VIEW actions in one intent-filter. Because SEND won't
-               work if you put a `android:scheme`, but VIEW requires it.
-
-            2. Matching on file extensions for the SEND action doesn't work.
-
-            3. the documentation about `android:pathPattern` (used for matching file
-               extensions) states:
-
-               > These attributes are meaningful only if the scheme and host attributes are also
-               > specified for the filter.
-
-               But this is wrong, since using `android:scheme` on the SEND action will break the
-               matching. Instead of setting `android:scheme`, you need to set `android:mimeType="*/*"`
-               to match file extensions with SEND.
-
-            4. `android:pathPattern` is case sensitive and is not using a true regex (it's just
-                globbing), so we need to match the uppercase versions of file extensions as well.
-            -->
-
-            <!-- SEND (Share) action -->
-
-            <!-- e.g. Dropbox Export, Gmail Send, Files Share. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- WARNING: Don't set `android:scheme` because it will break the matching. -->
-
-                <!-- Audiobook (Readium) -->
                 <data android:mimeType="application/audiobook+zip" />
                 <data android:mimeType="application/audiobook+json" />
-                <!-- CBZ -->
                 <data android:mimeType="application/vnd.comicbook+zip" />
                 <data android:mimeType="application/x-cbz" />
                 <data android:mimeType="application/x-cbr" />
-                <!-- DiViNa -->
                 <data android:mimeType="application/divina+zip" />
                 <data android:mimeType="application/divina+json" />
-                <!-- EPUB -->
                 <data android:mimeType="application/epub+zip" />
-                <!-- LCP -->
                 <data android:mimeType="application/audiobook+lcp" />
                 <data android:mimeType="application/pdf+lcp" />
                 <data android:mimeType="application/vnd.readium.lcp.license.v1.0+json" />
-                <!-- LPF -->
                 <data android:mimeType="application/lpf+zip" />
-                <!-- PDF -->
                 <data android:mimeType="application/pdf" />
-                <!-- WebPub (Readium) -->
                 <data android:mimeType="application/webpub+zip" />
                 <data android:mimeType="application/webpub+json" />
             </intent-filter>
 
-            <!-- VIEW (Open with) action -->
-
-            <!-- Works when an app knows the media type of a file, e.g. Gmail or Chrome. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -121,32 +79,23 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
 
-                <!-- Audiobook (Readium) -->
                 <data android:mimeType="application/audiobook+zip" />
                 <data android:mimeType="application/audiobook+json" />
-                <!-- CBZ -->
                 <data android:mimeType="application/vnd.comicbook+zip" />
                 <data android:mimeType="application/x-cbz" />
                 <data android:mimeType="application/x-cbr" />
-                <!-- DiViNa -->
                 <data android:mimeType="application/divina+zip" />
                 <data android:mimeType="application/divina+json" />
-                <!-- EPUB -->
                 <data android:mimeType="application/epub+zip" />
-                <!-- LCP -->
                 <data android:mimeType="application/audiobook+lcp" />
                 <data android:mimeType="application/pdf+lcp" />
                 <data android:mimeType="application/vnd.readium.lcp.license.v1.0+json" />
-                <!-- LPF -->
                 <data android:mimeType="application/lpf+zip" />
-                <!-- PDF -->
                 <data android:mimeType="application/pdf" />
-                <!-- WebPub (Readium) -->
                 <data android:mimeType="application/webpub+zip" />
                 <data android:mimeType="application/webpub+json" />
             </intent-filter>
 
-            <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -160,7 +109,6 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
 
-                <!-- This media type is necessary, otherwise it won't match on the file extension -->
                 <data android:mimeType="*/*" />
 
                 <data android:pathPattern=".*\\.audiobook" />
@@ -206,7 +154,6 @@
             </intent-filter>
         </service>
 
-
         <activity
             android:name=".search.SearchActivity"
             android:exported="false"
@@ -218,13 +165,6 @@
             android:exported="false"
             android:label="Chi tiết sách"
             android:parentActivityName=".search.SearchActivity" />
-
-        <activity
-            android:name=".search.BookReaderActivity"
-            android:exported="false"
-            android:label="Đọc sách"
-            android:parentActivityName=".search.BookDetailActivity" />
-
 
     </application>
 

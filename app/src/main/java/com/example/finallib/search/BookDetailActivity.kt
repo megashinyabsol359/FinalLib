@@ -28,6 +28,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import com.example.finallib.main.Application
+import com.example.finallib.reader.ReaderActivityContract
+import org.readium.r2.shared.util.toUrl
+import org.readium.r2.shared.util.AbsoluteUrl
+import java.io.File
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 class BookDetailActivity : AppCompatActivity() {
 
@@ -37,6 +44,9 @@ class BookDetailActivity : AppCompatActivity() {
     private val userBooksRepository = UserBooksRepository()
     private lateinit var reviewAdapter: ReviewAdapter
     private val reviewList = mutableListOf<Review>()
+
+    private val app: Application
+        get() = application as Application
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +96,7 @@ class BookDetailActivity : AppCompatActivity() {
         rvReviews.adapter = reviewAdapter
 
         btnRead.setOnClickListener {
-            downloadAndReadBook()
+            checkLocalAndRead()
         }
 
         btnRating.setOnClickListener {
@@ -99,6 +109,30 @@ class BookDetailActivity : AppCompatActivity() {
         // Check access for private books
         if (book.accessibility == "private") {
             checkAndSetupPrivateBookAccess(btnRead)
+        }
+    }
+
+    private fun checkLocalAndRead() {
+        lifecycleScope.launch {
+            val localBook = app.bookRepository.books().first().find { 
+                it.identifier == book.id || (it.title == book.title && it.author == book.author)
+            }
+            if (localBook != null) {
+                openReader(localBook.id!!)
+            } else {
+                downloadAndReadBook()
+            }
+        }
+    }
+
+    private fun openReader(bookId: Long) {
+        lifecycleScope.launch {
+            app.readerRepository.open(bookId).onSuccess {
+                val intent = ReaderActivityContract().createIntent(this@BookDetailActivity, ReaderActivityContract.Arguments(bookId))
+                startActivity(intent)
+            }.onFailure {
+                Toast.makeText(this@BookDetailActivity, "Không thể mở sách", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -231,20 +265,19 @@ class BookDetailActivity : AppCompatActivity() {
                     }
                 }
 
-                // Chuyển sang BookReaderActivity
-                val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
-                intent.putExtra("bookTitle", book.title)
-                intent.putExtra("tempFilePath", filePath)
-                startActivity(intent)
-
-                // Đóng dialog
-                lifecycleScope.launch(Dispatchers.Main) {
+                // Import book to local library
+                val file = File(filePath)
+                val url = file.toUrl()
+                val importResult = app.bookshelf.addPublication(url as AbsoluteUrl)
+                
+                withContext(Dispatchers.Main) {
                     dialog.dismiss()
-                    Toast.makeText(
-                        this@BookDetailActivity,
-                        "Sách tải thành công",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    importResult.onSuccess { bookId ->
+                        Toast.makeText(this@BookDetailActivity, "Sách tải thành công", Toast.LENGTH_SHORT).show()
+                        openReader(bookId)
+                    }.onFailure {
+                        Toast.makeText(this@BookDetailActivity, "Lỗi khi nhập sách vào thư viện: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
 
@@ -286,7 +319,7 @@ class BookDetailActivity : AppCompatActivity() {
                         btnRead.text = "Đọc sách"
                         btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
                         btnRead.setOnClickListener {
-                            downloadAndReadBook()
+                            checkLocalAndRead()
                         }
                     }
                 }
@@ -347,7 +380,7 @@ class BookDetailActivity : AppCompatActivity() {
                     btnRead.text = "Đọc sách"
                     btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
                     btnRead.setOnClickListener {
-                        downloadAndReadBook()
+                        checkLocalAndRead()
                     }
                 }
             } catch (e: Exception) {
