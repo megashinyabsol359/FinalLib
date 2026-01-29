@@ -13,9 +13,9 @@ import com.example.finallib.model.User
 class UserAdapter(
     private var userList: List<User>,
     private val currentUserId: String,
-    private val onItemClick: (User) -> Unit
+    private val onItemClick: (User) -> Unit,
+    private val onItemLongClick: (User) -> Unit
 ) : RecyclerView.Adapter<UserAdapter.UserViewHolder>() {
-
 
     class UserViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvName: TextView = view.findViewById(R.id.tv_user_name)
@@ -40,15 +40,22 @@ class UserAdapter(
         if (user.id == currentUserId) {
             holder.tvName.text = "${user.fullName} (Bạn)"
             holder.tvName.setTextColor(Color.parseColor("#009688"))
-            holder.tvName.setTypeface(null, Typeface.BOLD) // In đậm
+            holder.tvName.setTypeface(null, Typeface.BOLD)
         } else {
             holder.tvName.text = user.fullName
             holder.tvName.setTextColor(Color.BLACK)
             holder.tvName.setTypeface(null, Typeface.NORMAL)
         }
 
+        // Click thường
         holder.itemView.setOnClickListener {
             onItemClick(user)
+        }
+
+        // Nhấn giu
+        holder.itemView.setOnLongClickListener {
+            onItemLongClick(user)
+            true
         }
     }
 
