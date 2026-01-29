@@ -2,7 +2,6 @@ package com.example.finallib.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -12,15 +11,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.example.finallib.R
 import com.example.finallib.main.MainActivity
-import com.example.finallib.model.SystemLog // Import Model SystemLog
+import com.example.finallib.utils.LogUtils // Import LogUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
-    private lateinit var db: FirebaseFirestore
-
+    // Không cần dùng db ở đây nữa vì LogUtils tự xử lý
+    
     private lateinit var edtEmail: EditText
     private lateinit var edtPass: EditText
     private lateinit var btnLogin: Button
@@ -32,7 +31,6 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
-        db = FirebaseFirestore.getInstance()
 
         edtEmail = findViewById(R.id.edt_email)
         edtPass = findViewById(R.id.edt_password)
@@ -58,8 +56,9 @@ class LoginActivity : AppCompatActivity() {
         super.onStart()
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // Log
-            saveLoginLog(currentUser.uid, currentUser.email ?: "Unknown")
+            // Không cần log ở onStart để tránh spam log mỗi lần mở app
+            // Hoặc nếu muốn log thì dùng LogUtils
+            // LogUtils.writeLog("AUTO_LOGIN", "Tự động đăng nhập")
             goToMainActivity()
         }
     }
@@ -71,11 +70,8 @@ class LoginActivity : AppCompatActivity() {
                 showLoading(false)
                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
 
-                val user = result.user
-                if (user != null) {
-                    // Log
-                    saveLoginLog(user.uid, email)
-                }
+                // --- GHI LOG MỚI (Dùng LogUtils) ---
+                LogUtils.writeLog("LOGIN", "Đăng nhập thành công vào thiết bị")
 
                 goToMainActivity()
             }
@@ -85,34 +81,7 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
-    // Hàm ghi Log
-    private fun saveLoginLog(userId: String, email: String) {
-        db.collection("users").document(userId)
-            .get()
-            .addOnSuccessListener { document ->
-                val currentRole = document.getString("role") ?: "User"
-                val currentName = document.getString("fullName") ?: "Unknown"
-
-
-                val log = SystemLog(
-                    userId = userId,
-                    email = email,
-                    fullName = currentName,
-                    role = currentRole,
-                    action = "LOGIN",
-                    details = "Đăng nhập hệ thống ($currentRole)"
-                )
-
-                db.collection("system_logs").add(log)
-                    .addOnSuccessListener {
-                        Log.d("SystemLog", "Đã lưu log login cho: $currentName ($currentRole)")
-                    }
-            }
-            .addOnFailureListener {
-                val log = SystemLog(userId, email, "Unknown", "Unknown", "LOGIN", "Lỗi lấy thông tin user")
-                db.collection("system_logs").add(log)
-            }
-    }
+    // Đã XÓA hàm saveLoginLog() cũ vì không cần thiết nữa
 
     private fun goToMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
