@@ -47,10 +47,23 @@ class BookshelfAdapter(
 
         fun bind(book: Book) {
             binding.bookshelfTitleText.text = book.title
-            Picasso.get()
-                .load(File(book.cover))
-                .placeholder(R.drawable.cover)
-                .into(binding.bookshelfCoverImage)
+            
+            if (book.cover.isNotEmpty()) {
+                if (book.cover.startsWith("http")) {
+                    Picasso.get()
+                        .load(book.cover)
+                        .placeholder(R.drawable.cover)
+                        .into(binding.bookshelfCoverImage)
+                } else {
+                    Picasso.get()
+                        .load(File(book.cover))
+                        .placeholder(R.drawable.cover)
+                        .into(binding.bookshelfCoverImage)
+                }
+            } else {
+                binding.bookshelfCoverImage.setImageResource(R.drawable.cover)
+            }
+
             binding.root.singleClick {
                 onBookClick(book)
             }
@@ -67,7 +80,11 @@ class BookshelfAdapter(
             oldItem: Book,
             newItem: Book,
         ): Boolean {
-            return oldItem.id == newItem.id
+            return if (oldItem.id != null && newItem.id != null) {
+                oldItem.id == newItem.id
+            } else {
+                oldItem.identifier == newItem.identifier
+            }
         }
 
         override fun areContentsTheSame(
@@ -77,7 +94,8 @@ class BookshelfAdapter(
             return oldItem.title == newItem.title &&
                 oldItem.href == newItem.href &&
                 oldItem.author == newItem.author &&
-                oldItem.identifier == newItem.identifier
+                oldItem.identifier == newItem.identifier &&
+                oldItem.cover == newItem.cover
         }
     }
 }

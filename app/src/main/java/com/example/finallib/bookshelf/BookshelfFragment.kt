@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.URLUtil
 import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -23,18 +24,18 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
+import com.example.finallib.R
+import com.example.finallib.data.model.Book
+import com.example.finallib.databinding.FragmentBookshelfBinding
+import com.example.finallib.main.Application
+import com.example.finallib.opds.GridAutoFitLayoutManager
+import com.example.finallib.reader.ReaderActivityContract
+import com.example.finallib.utils.viewLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.util.AbsoluteUrl
-import com.example.finallib.main.Application
-import com.example.finallib.R
-import com.example.finallib.data.model.Book
-import com.example.finallib.databinding.FragmentBookshelfBinding
-import com.example.finallib.opds.GridAutoFitLayoutManager
-import com.example.finallib.reader.ReaderActivityContract
-import com.example.finallib.utils.viewLifecycle
 
 class BookshelfFragment : Fragment() {
 
@@ -74,11 +75,12 @@ class BookshelfFragment : Fragment() {
 
         bookshelfViewModel.channel.receive(viewLifecycleOwner) { handleEvent(it) }
 
+        // Refresh the purchased books list whenever the fragment is shown
+        bookshelfViewModel.refreshPurchasedBooks()
+
         bookshelfAdapter = BookshelfAdapter(
             onBookClick = { book ->
-                book.id?.let {
-                    bookshelfViewModel.openPublication(it)
-                }
+                bookshelfViewModel.openPublication(book)
             },
             onBookLongClick = { book -> confirmDeleteBook(book) }
         )
@@ -110,7 +112,7 @@ class BookshelfFragment : Fragment() {
             )
         }
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 bookshelfViewModel.books.collectLatest {
                     bookshelfAdapter.submitList(it)
                 }
@@ -172,6 +174,14 @@ class BookshelfFragment : Fragment() {
                     event.arguments
                 )
                 startActivity(intent)
+            }
+            
+            is BookshelfViewModel.Event.ImportingBook -> {
+                Toast.makeText(
+                    requireContext(), 
+                    "Đang tải và nhập sách: ${event.title}...", 
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
