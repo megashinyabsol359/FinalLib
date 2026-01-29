@@ -108,6 +108,81 @@
             android:background="#F5F5F5"
             android:layout_marginBottom="16dp" />
 
+        <!-- Ảnh Bìa Sách (Optional) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ảnh bìa sách (Optional)"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:textSize="14sp" />
+
+        <ImageView
+            android:id="@+id/iv_book_cover"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="Ảnh bìa sách"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btn_select_cover"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="Chọn Ảnh Bìa"
+            android:backgroundTint="#2196F3"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Accessibility (Public/Private) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loại sách"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_accessibility"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rb_public"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Public (Miễn phí)"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/rb_private"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Private (Trả phí)" />
+
+        </RadioGroup>
+
+        <!-- Giá Tiền (Chỉ hiện khi chọn Private) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Giá tiền (VND)"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_price"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/progress_bar"

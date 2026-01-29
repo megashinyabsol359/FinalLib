@@ -1,21 +1,31 @@
 package com.example.finallib.search
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 import com.example.finallib.model.Book
+import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
+import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.bumptech.glide.Glide
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class BookDetailActivity : AppCompatActivity() {
@@ -41,6 +51,7 @@ class BookDetailActivity : AppCompatActivity() {
         supportActionBar?.title = book.title
 
         // Setup views
+        val ivCover: ImageView = findViewById(R.id.iv_book_cover_detail)
         val tvId: TextView = findViewById(R.id.tv_detail_id)
         val tvTitle: TextView = findViewById(R.id.tv_detail_title)
         val tvAuthor: TextView = findViewById(R.id.tv_detail_author)
@@ -50,6 +61,16 @@ class BookDetailActivity : AppCompatActivity() {
         val btnRating: Button = findViewById(R.id.btn_rating)
         val rvReviews: RecyclerView = findViewById(R.id.rv_reviews)
         val tvNoReviews: TextView = findViewById(R.id.tv_no_reviews)
+
+        // Load cover image
+        if (book.cover.isNotEmpty()) {
+            Glide.with(this)
+                .load(book.cover)
+                .centerCrop()
+                .into(ivCover)
+        } else {
+            ivCover.setImageResource(R.drawable.ic_launcher_foreground) // Fallback image
+        }
 
         tvId.text = "ID: ${book.id}"
         tvTitle.text = "Tiêu đề: ${book.title}"
@@ -63,7 +84,7 @@ class BookDetailActivity : AppCompatActivity() {
         rvReviews.adapter = reviewAdapter
 
         btnRead.setOnClickListener {
-            Toast.makeText(this, "Chức năng đọc sách sẽ được thêm sau", Toast.LENGTH_SHORT).show()
+            downloadAndReadBook()
         }
 
         btnRating.setOnClickListener {
@@ -72,6 +93,11 @@ class BookDetailActivity : AppCompatActivity() {
 
         // Fetch reviews
         fetchReviews(rvReviews, tvNoReviews)
+
+        // Check access for private books
+        if (book.accessibility == "private") {
+            checkAndSetupPrivateBookAccess(btnRead)
+        }
     }
 
     private fun showRatingDialog() {
@@ -170,4 +196,159 @@ class BookDetailActivity : AppCompatActivity() {
         onBackPressedDispatcher.onBackPressed()
         return true
     }
+
+    private fun downloadAndReadBook() {
+        if (book.url.isEmpty()) {
+            Toast.makeText(this, "Sách này không có file để tải", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Hiện ProgressBar
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleLarge)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Đang tải sách...")
+            .setView(progressBar)
+            .setCancelable(false)
+            .show()
+
+        // Download file
+        lifecycleScope.launch(Dispatchers.IO) {
+            val fileName = "${book.id}_${book.title.replace(" ", "_")}.epub"
+            
+            val result = FileDownloadService.downloadFile(
+                context = this@BookDetailActivity,
+                fileUrl = book.url,
+                fileName = fileName
+            )
+
+            result.onSuccess { filePath ->
+                // Chuyển sang BookReaderActivity
+                val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
+                intent.putExtra("bookTitle", book.title)
+                intent.putExtra("tempFilePath", filePath)
+                startActivity(intent)
+
+                // Đóng dialog
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.dismiss()
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Sách tải thành công",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            result.onFailure { error ->
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.dismiss()
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi tải sách: ${error.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun checkAndSetupPrivateBookAccess(btnRead: Button) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            // User not logged in, show purchase button
+            setupPurchaseButton(btnRead)
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val querySnapshot = db.collection("purchases")
+                    .whereEqualTo("bookId", book.id)
+                    .whereEqualTo("userId", currentUser.uid)
+                    .get()
+                    .await()
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (querySnapshot.isEmpty) {
+                        // User hasn't purchased, show purchase button
+                        setupPurchaseButton(btnRead)
+                    } else {
+                        // User has purchased, keep read button
+                        btnRead.text = "Đọc sách"
+                        btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
+                        btnRead.setOnClickListener {
+                            downloadAndReadBook()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi kiểm tra quyền truy cập: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    setupPurchaseButton(btnRead)
+                }
+            }
+        }
+    }
+
+    private fun setupPurchaseButton(btnRead: Button) {
+        btnRead.text = "Mua sách"
+        btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_orange_light))
+        btnRead.setOnClickListener {
+            purchaseBook(btnRead)
+        }
+    }
+
+    private fun purchaseBook(btnRead: Button) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để mua sách", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val purchase = Purchase(
+                    id = UUID.randomUUID().toString(),
+                    bookId = book.id,
+                    userId = currentUser.uid,
+                    purchasedAt = System.currentTimeMillis(),
+                    price = 0.0,
+                    paymentMethod = "test"
+                )
+
+                db.collection("purchases")
+                    .document(purchase.id)
+                    .set(purchase)
+                    .await()
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Mua sách thành công!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Change button back to read
+                    btnRead.text = "Đọc sách"
+                    btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
+                    btnRead.setOnClickListener {
+                        downloadAndReadBook()
+                    }
+                }
+            } catch (e: Exception) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@BookDetailActivity,
+                        "Lỗi mua sách: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
 }
