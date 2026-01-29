@@ -36,6 +36,12 @@
             android:visible="false" />
 
         <item
+            android:id="@+id/nav_book_approval"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Duyệt sách upload"
+            android:visible="false" />
+
+        <item
             android:id="@+id/nav_logs"
             android:icon="@android:drawable/ic_menu_info_details"
             android:title="Nhật ký hệ thống"

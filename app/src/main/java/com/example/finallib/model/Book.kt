@@ -16,5 +16,6 @@ data class Book(
     val sellerId: String = "",
     val uploadedBy: String = "",
     val accessibility: String = "public",
-    val price: Double = 0.0
+    val price: Double = 0.0,
+    val read_count: Long = 0
 ) : Serializable

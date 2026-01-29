@@ -141,6 +141,8 @@ class PaymentActivity : AppCompatActivity() {
                                     .document(purchase.id)
                                     .set(purchase)
                                     .await()
+                                
+                                
 
                                 lifecycleScope.launch(Dispatchers.Main) {
                                     dialog.dismiss()
