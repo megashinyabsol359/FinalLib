@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     showUploadDialog()
                 }
 
-                // Tìm kiếm
+                // Tìm kiếm của nhân
                 R.id.nav_search -> {
                     startActivity(Intent(this, SearchActivity::class.java))
                 }
