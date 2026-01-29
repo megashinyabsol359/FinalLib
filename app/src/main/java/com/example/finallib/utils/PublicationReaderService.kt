@@ -2,11 +2,8 @@ package com.example.finallib.utils
 
 import android.content.Context
 import androidx.fragment.app.FragmentManager
-import com.example.finallib.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.readium.r2.navigator.epub.EpubNavigatorFactory
-import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
 import org.readium.r2.shared.util.http.DefaultHttpClient
@@ -14,29 +11,44 @@ import org.readium.r2.streamer.PublicationOpener
 import org.readium.r2.streamer.parser.DefaultPublicationParser
 import java.io.File
 
-/**
- * PublicationReaderService - Tái sử dụng logic mở sách từ file path
- * Dùng cho cả Fragment (LibraryFragment) và Activity (BookReaderActivity)
- */
 object PublicationReaderService {
 
     /**
-     * Load Publication từ file path
-     * @param context Android context
-     * @param filePath Đường dẫn file sách
-     * @param callback Callback khi Publication được load thành công/thất bại
+     * Load Publication từ file path (có thể là file .enc)
+     * Callback: Result<Pair<Publication, String?>>:
+     *  - Pair.first = Publication
+     *  - Pair.second = đường dẫn file plaintext đã giải mã (nếu có) -> caller cần xóa khi xong
      */
     suspend fun loadPublicationFromFile(
         context: Context,
         filePath: String,
-        callback: (Result<Publication>) -> Unit
+        userId: String,
+        callback: (Result<Pair<Publication, String?>>) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            val bookFile = File(filePath)
-            
-            if (!bookFile.exists()) {
+            val incomingFile = File(filePath)
+            if (!incomingFile.exists()) {
                 callback(Result.failure(Exception("File không tồn tại: $filePath")))
                 return@withContext
+            }
+
+            var fileToOpen = incomingFile
+            var decryptedTempPath: String? = null
+
+            if (incomingFile.name.endsWith(".enc")) {
+                // decrypt into cache (temporary) to avoid storing plaintext persistently
+                val cacheDir = File(context.cacheDir, "books")
+                if (!cacheDir.exists()) cacheDir.mkdirs()
+                val decryptedFile = File(cacheDir, incomingFile.name.removeSuffix(".enc") + "_decrypted.epub")
+
+                val ok = DRMManager.decryptFile(context, incomingFile, decryptedFile, userId)
+                if (!ok || !decryptedFile.exists()) {
+                    callback(Result.failure(Exception("DRM: Không thể giải mã file (có thể user không hợp lệ)")))
+                    return@withContext
+                }
+
+                fileToOpen = decryptedFile
+                decryptedTempPath = decryptedFile.absolutePath
             }
 
             val httpClient = DefaultHttpClient()
@@ -44,75 +56,42 @@ object PublicationReaderService {
             val parser = DefaultPublicationParser(context, httpClient, assetRetriever, pdfFactory = null)
             val opener = PublicationOpener(parser, contentProtections = emptyList())
 
-            val assetResult = assetRetriever.retrieve(bookFile)
-
+            val assetResult = assetRetriever.retrieve(fileToOpen)
             assetResult.onFailure { error ->
                 callback(Result.failure(Exception("Lỗi đọc file: $error")))
                 return@withContext
             }
 
-            val asset = assetResult.getOrNull()
-                ?: run {
-                    callback(Result.failure(Exception("Asset null")))
-                    return@withContext
-                }
-
-            val publicationResult = opener.open(asset, allowUserInteraction = false)
-
-            publicationResult.onSuccess { publication ->
-                callback(Result.success(publication))
-            }.onFailure { error ->
-                callback(Result.failure(Exception("Lỗi mở sách: $error")))
+            val asset = assetResult.getOrNull() ?: run {
+                callback(Result.failure(Exception("Không lấy được asset từ file")))
+                return@withContext
             }
 
+            val publicationResult = opener.open(asset)
+            publicationResult.onFailure { err ->
+                callback(Result.failure(Exception("Không thể mở publication: $err")))
+                return@withContext
+            }
+
+            val publication = publicationResult.getOrNull() ?: run {
+                callback(Result.failure(Exception("Không thể tạo publication")))
+                return@withContext
+            }
+
+            callback(Result.success(Pair(publication, decryptedTempPath)))
         } catch (e: Exception) {
             callback(Result.failure(e))
         }
     }
 
-    /**
-     * Mở Publication sử dụng EpubNavigatorFragment trong Fragment
-     * @param publication Publication object
-     * @param fragmentManager FragmentManager từ Fragment
-     * @param containerId ID của container view
-     */
     fun openReaderInFragment(
         publication: Publication,
         fragmentManager: FragmentManager,
-        containerId: Int = R.id.fragment_container
+        containerId: Int
     ) {
-        try {
-            val navigatorFactory = EpubNavigatorFactory(publication)
-            val fragmentFactory = navigatorFactory.createFragmentFactory(
-                initialLocator = null,
-                listener = null
-            )
-
-            fragmentManager.fragmentFactory = fragmentFactory
-
-            val fragment = fragmentManager.fragmentFactory.instantiate(
-                fragmentManager.fragments.firstOrNull()?.requireContext()?.classLoader
-                    ?: ClassLoader.getSystemClassLoader(),
-                EpubNavigatorFragment::class.java.name
-            )
-
-            fragmentManager.beginTransaction()
-                .replace(containerId, fragment)
-                .addToBackStack("Reader")
-                .commit()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    /**
-     * Lấy thông tin sách từ Publication
-     */
-    fun getPublicationInfo(publication: Publication): Map<String, String> {
-        return mapOf(
-            "title" to (publication.metadata.title ?: "Unknown"),
-            "author" to (publication.metadata.authors.firstOrNull()?.name ?: "Unknown"),
-            "language" to (publication.metadata.languages.firstOrNull() ?: "Unknown")
-        )
+        val fragment = org.readium.r2.navigator.epub.EpubNavigatorFactory().createFragment(publication)
+        fragmentManager.beginTransaction()
+            .replace(containerId, fragment)
+            .commit()
     }
 }
