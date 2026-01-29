@@ -33,6 +33,24 @@
             android:name=".main.MainActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".search.SearchActivity"
+            android:exported="false"
+            android:label="Tìm kiếm"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity
+            android:name=".search.BookDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết sách"
+            android:parentActivityName=".search.SearchActivity" />
+
+        <activity
+            android:name=".search.BookReaderActivity"
+            android:exported="false"
+            android:label="Đọc sách"
+            android:parentActivityName=".search.BookDetailActivity" />
+
     </application>
 
 </manifest>
