@@ -19,6 +19,7 @@ import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
+import com.example.finallib.payment.PaymentActivity
 import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -96,6 +97,15 @@ class BookDetailActivity : AppCompatActivity() {
 
         // Check access for private books
         if (book.accessibility == "private") {
+            checkAndSetupPrivateBookAccess(btnRead)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Kiểm tra lại purchase data khi quay về từ PaymentActivity
+        if (book.accessibility == "private") {
+            val btnRead: Button = findViewById(R.id.btn_read)
             checkAndSetupPrivateBookAccess(btnRead)
         }
     }
@@ -309,46 +319,17 @@ class BookDetailActivity : AppCompatActivity() {
             return
         }
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val purchase = Purchase(
-                    id = UUID.randomUUID().toString(),
-                    bookId = book.id,
-                    userId = currentUser.uid,
-                    purchasedAt = System.currentTimeMillis(),
-                    price = 0.0,
-                    paymentMethod = "test"
-                )
+        // Chuyển sang màn hình thanh toán
+        goToPayment()
+    }
 
-                db.collection("purchases")
-                    .document(purchase.id)
-                    .set(purchase)
-                    .await()
-
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@BookDetailActivity,
-                        "Mua sách thành công!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    // Change button back to read
-                    btnRead.text = "Đọc sách"
-                    btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
-                    btnRead.setOnClickListener {
-                        downloadAndReadBook()
-                    }
-                }
-            } catch (e: Exception) {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@BookDetailActivity,
-                        "Lỗi mua sách: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
+    /**
+     * Chuyển sang màn hình thanh toán
+     */
+    private fun goToPayment() {
+        val intent = Intent(this, PaymentActivity::class.java)
+        intent.putExtra("book", book)
+        startActivity(intent)
     }
 
 }

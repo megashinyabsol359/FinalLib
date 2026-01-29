@@ -46,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation(files("D:\\LT_Android\\Project\\zpdk-release-v3.1.aar"))
     // Readium Android < 26
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
