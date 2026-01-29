@@ -152,6 +152,13 @@ class PaymentActivity : AppCompatActivity() {
                                         .addOnFailureListener { e -> Log.e("Payment", "Lỗi cập nhật doanh thu: ${e.message}") }
                                 }
 
+                                // Lưu lên Firebase
+                                db.collection("purchases")
+                                    .document(purchase.id)
+                                    .set(purchase)
+                                    .await()
+                                
+                                
                                 // 3. (MỚI) Ghi Log hệ thống
                                 withContext(Dispatchers.Main) {
                                     LogUtils.writeLog("PAYMENT_SUCCESS", "Mua sách '${book.title}' giá ${book.price} qua ZaloPay")

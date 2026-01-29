@@ -28,6 +28,7 @@ import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
 import com.example.finallib.search.SearchActivity
 import com.example.finallib.admin.UserListFragment
+import com.example.finallib.admin.BookApprovalActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -109,6 +110,11 @@ class MainActivity : AppCompatActivity() {
 
                 // Admin: Duyệt đơn
                 R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment())
+
+                // Admin: Duyệt sách upload
+                R.id.nav_book_approval -> {
+                    startActivity(Intent(this, BookApprovalActivity::class.java))
+                }
 
                 // Admin: Danh sách tài khoản
                 R.id.nav_user_list -> replaceFragment(UserListFragment())
@@ -212,6 +218,7 @@ class MainActivity : AppCompatActivity() {
                             menu.findItem(R.id.nav_logs)?.isVisible = true
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
                             menu.findItem(R.id.nav_user_list)?.isVisible = true
+                            menu.findItem(R.id.nav_book_approval)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true

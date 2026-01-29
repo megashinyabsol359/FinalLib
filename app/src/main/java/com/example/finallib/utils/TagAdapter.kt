@@ -18,14 +18,20 @@ class TagAdapter(
 ) : RecyclerView.Adapter<TagAdapter.TagViewHolder>() {
 
     inner class TagViewHolder(private val checkBox: CheckBox) : RecyclerView.ViewHolder(checkBox) {
+        private var listener: android.widget.CompoundButton.OnCheckedChangeListener? = null
+
         fun bind(tagItem: TagItem) {
             checkBox.text = tagItem.name
+            // Remove listener trước để tránh trigger khi set state
+            checkBox.setOnCheckedChangeListener(null)
             checkBox.isChecked = tagItem.isSelected
-
-            checkBox.setOnCheckedChangeListener { _, isChecked ->
+            
+            // Set listener mới
+            listener = android.widget.CompoundButton.OnCheckedChangeListener { _, isChecked ->
                 tagItem.isSelected = isChecked
                 onTagSelected(getSelectedTags())
             }
+            checkBox.setOnCheckedChangeListener(listener)
         }
     }
 

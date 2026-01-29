@@ -37,7 +37,7 @@ class BookSearchAdapter(private var bookList: List<Book>) : RecyclerView.Adapter
 
             tvTitle.text = book.title
             tvAuthor.text = "Tác giả: ${book.author}"
-            tvLanguage.text = "Ngôn ngữ: ${book.language}"
+            tvLanguage.text = "Ngôn ngữ: ${book.language} | Lượt đọc: ${book.read_count}"
             tvTags.text = "Tags: ${book.tags.joinToString(", ")}"
 
             // Apply yellow border if book is private
@@ -75,7 +75,8 @@ class BookSearchAdapter(private var bookList: List<Book>) : RecyclerView.Adapter
     override fun getItemCount(): Int = bookList.size
 
     fun updateList(newList: List<Book>) {
-        bookList = newList
+        // Chỉ hiển thị sách có status = "approved"
+        bookList = newList.filter { it.status == "approved" }
         notifyDataSetChanged()
     }
 }

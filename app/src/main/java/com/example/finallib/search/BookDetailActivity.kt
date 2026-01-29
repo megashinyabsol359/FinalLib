@@ -19,6 +19,7 @@ import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
+import com.example.finallib.model.SystemLog
 import com.example.finallib.payment.PaymentActivity
 import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
@@ -27,7 +28,6 @@ import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.UUID
 
 class BookDetailActivity : AppCompatActivity() {
 
@@ -151,9 +151,7 @@ class BookDetailActivity : AppCompatActivity() {
     }
 
     private fun submitReview(rating: Float, comment: String, userId: String, userName: String) {
-        val reviewId = UUID.randomUUID().toString()
         val review = Review(
-            id = reviewId,
             bookId = book.id,
             userId = userId,
             userName = userName,
@@ -162,8 +160,7 @@ class BookDetailActivity : AppCompatActivity() {
         )
 
         db.collection("reviews")
-            .document(reviewId)
-            .set(review)
+            .add(review)
             .addOnSuccessListener {
                 Toast.makeText(this, "Đánh giá đã được lưu", Toast.LENGTH_SHORT).show()
                 // Refresh reviews list
@@ -232,6 +229,12 @@ class BookDetailActivity : AppCompatActivity() {
             )
 
             result.onSuccess { filePath ->
+                // Tăng read_count cho sách
+                increaseReadCount(book.id)
+
+                // Tạo system log
+                createReadingLog()
+
                 // Chuyển sang BookReaderActivity
                 val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
                 intent.putExtra("bookTitle", book.title)
@@ -330,6 +333,67 @@ class BookDetailActivity : AppCompatActivity() {
         val intent = Intent(this, PaymentActivity::class.java)
         intent.putExtra("book", book)
         startActivity(intent)
+    }
+
+    /**
+     * Tăng read_count cho sách
+     */
+    private fun increaseReadCount(bookId: String) {
+        db.collection("books").document(bookId)
+            .update("readCount", com.google.firebase.firestore.FieldValue.increment(1))
+            .addOnSuccessListener {
+                // Thành công
+            }
+            .addOnFailureListener { e ->
+                // Có thể log lỗi nếu cần
+            }
+    }
+
+    /**
+     * Lấy role người dùng từ Firestore
+     */
+    private fun getUserRole(userId: String, callback: (String) -> Unit) {
+        db.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                val role = document.getString("role") ?: "reader"
+                callback(role)
+            }
+            .addOnFailureListener {
+                callback("reader")  // Default role
+            }
+    }
+
+    /**
+     * Tạo system log khi người dùng đọc sách
+     */
+    private fun createReadingLog() {
+        val currentUser = auth.currentUser
+        if (currentUser == null) return
+
+        try {
+            // Lấy role từ Firestore
+            getUserRole(currentUser.uid) { role ->
+                val systemLog = SystemLog(
+                    userId = currentUser.uid,
+                    email = currentUser.email ?: "",
+                    fullName = currentUser.displayName ?: "Ẩn danh",
+                    role = role,
+                    action = "READING",
+                    details = "Đọc sách ${book.title} (${book.id})"
+                )
+
+                db.collection("system_logs")
+                    .add(systemLog)
+                    .addOnSuccessListener {
+                        // Log thành công
+                    }
+                    .addOnFailureListener { e ->
+                        // Log thất bại (không cần notify user)
+                    }
+            }
+        } catch (e: Exception) {
+            // Handle exception silently
+        }
     }
 
 }
