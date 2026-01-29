@@ -44,17 +44,59 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-        // Khởi tạo Adapter
-        adapter = UserAdapter(filteredList, currentUserId) { selectedUser ->
-            showUserDetailDialog(selectedUser)
-        }
+        // Thêm tham số onItemLongClick (nhấn giữ)
+        adapter = UserAdapter(
+            userList = filteredList,
+            currentUserId = currentUserId,
+            onItemClick = { selectedUser ->
+                // Click thường: Hiện dialog chi tiết luôn (hoặc có thể bỏ nếu muốn bắt buộc dùng Long Click)
+                showUserDetailDialog(selectedUser)
+            },
+            onItemLongClick = { selectedUser ->
+                // Nhấn giữ: Hiện menu tùy chọn
+                showActionDialog(selectedUser)
+            }
+        )
         recyclerView.adapter = adapter
 
         setupSpinner()
-
         setupSearchView()
-
         loadUsers()
+    }
+
+    // Nhấn giữ có lựa choọn
+    private fun showActionDialog(user: User) {
+        val options = arrayOf("Xem thông tin chi tiết", "Xem nhật ký hoạt động")
+
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Tùy chọn: ${user.fullName}")
+        builder.setItems(options) { _, which ->
+            when (which) {
+                0 -> { // Chọn "Xem thông tin"
+                    showUserDetailDialog(user)
+                }
+                1 -> { // Chọn "Xem log"
+                    openUserLogs(user)
+                }
+            }
+        }
+        builder.show()
+    }
+
+    // Chuyển sang System Log
+    private fun openUserLogs(user: User) {
+        val logFragment = SystemLogFragment()
+
+        // Đóng gói ID user gửi sang Fragment kia
+        val bundle = Bundle()
+        bundle.putString("USER_ID", user.id)
+        logFragment.arguments = bundle
+
+        // Thực hiện chuyển Fragment
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, logFragment)
+            .addToBackStack(null) // Để bấm nút Back sẽ quay lại danh sách User
+            .commit()
     }
 
     private fun setupSpinner() {
@@ -86,7 +128,6 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
         })
     }
 
-    // Hàm Filter
     private fun filterUsers() {
         filteredList.clear()
 
@@ -116,7 +157,7 @@ class UserListFragment : Fragment(R.layout.fragment_user_list) {
                     val user = doc.toObject(User::class.java)
                     originalList.add(user)
                 }
-                filterUsers()
+                filterUsers() // Lọc lần đầu để hiện danh sách
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
