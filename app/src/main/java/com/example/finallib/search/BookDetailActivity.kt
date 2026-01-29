@@ -214,18 +214,29 @@ class BookDetailActivity : AppCompatActivity() {
         // Download file
         lifecycleScope.launch(Dispatchers.IO) {
             val fileName = "${book.id}_${book.title.replace(" ", "_")}.epub"
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            if (currentUserId == null) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.dismiss()
+                    Toast.makeText(this@BookDetailActivity, "Bạn cần đăng nhập để tải sách", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
 
+            // Note: assumes FileDownloadService.downloadFile has signature with userId parameter.
             val result = FileDownloadService.downloadFile(
                 context = this@BookDetailActivity,
                 fileUrl = book.url,
-                fileName = fileName
+                fileName = fileName,
+                userId = currentUserId
             )
 
-            result.onSuccess { filePath ->
-                // Chuyển sang BookReaderActivity
+            result.onSuccess { encFilePath ->
+                // Chuyển sang BookReaderActivity, truyền cả đường dẫn file mã hóa và userId
                 val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
                 intent.putExtra("bookTitle", book.title)
-                intent.putExtra("tempFilePath", filePath)
+                intent.putExtra("tempFilePath", encFilePath)
+                intent.putExtra("userId", currentUserId)
                 startActivity(intent)
 
                 // Đóng dialog
