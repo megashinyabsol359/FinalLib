@@ -24,9 +24,15 @@
             android:visible="false" />
 
         <item
+            android:id="@+id/nav_user_list"
+            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:title="Danh sách tài khoản"
+            android:visible="false" />
+
+        <item
             android:id="@+id/nav_admin_noti"
             android:icon="@android:drawable/ic_popup_reminder"
-            android:title="Duyệt người bán (Admin)"
+            android:title="Duyệt người bán"
             android:visible="false" />
 
         <item

@@ -22,11 +22,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 
 import com.example.finallib.auth.LoginActivity
-import com.example.finallib.auth.ChangePasswordActivity
-import com.example.finallib.auth.RegisterSellerActivity
-import com.example.finallib.admin.SystemLogActivity
-import com.example.finallib.admin.AdminNotificationActivity
-import com.example.finallib.search.SearchActivity
+
+import com.example.finallib.auth.ChangePasswordFragment
+import com.example.finallib.auth.RegisterSellerFragment
+import com.example.finallib.admin.SystemLogFragment
+import com.example.finallib.admin.AdminNotificationFragment
+import com.example.finallib.admin.UserListFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -103,6 +104,9 @@ class MainActivity : AppCompatActivity() {
 
                 // Admin: Duyệt đơn
                 R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment())
+
+                // Admin: Danh sách tài khoản
+                R.id.nav_user_list -> replaceFragment(UserListFragment())
 
                 // Admin: Xem Log
                 R.id.nav_logs -> replaceFragment(SystemLogFragment())
@@ -201,6 +205,7 @@ class MainActivity : AppCompatActivity() {
                         "Admin" -> {
                             menu.findItem(R.id.nav_logs)?.isVisible = true
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
+                            menu.findItem(R.id.nav_user_list)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true
