@@ -11,7 +11,7 @@ import com.example.finallib.R
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 
-class ChangePasswordFragment : Fragment(R.layout.activity_change_password) {
+class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
