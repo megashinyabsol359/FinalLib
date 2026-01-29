@@ -1,15 +1,16 @@
 package com.example.finallib.model
 
-import com.google.firebase.firestore.ServerTimestamp
+import com.google.firebase.firestore.DocumentId
 import java.util.Date
 
 data class SellerRequest(
-    val requestId: String = "",
-    val userId: String = "",
-    val userEmail: String = "",
-    val fullName: String = "",
-    val status: String = "PENDING",
-
-    @ServerTimestamp
-    val timestamp: Date? = null
+    @DocumentId
+    val id: String = "",            // ID của đơn yêu cầu
+    val userId: String = "",        // ID người gửi
+    val email: String = "",
+    val shopName: String = "",      // Tên cửa hàng
+    val bankInfo: String = "",      // <--- MỚI: Tên NH - STK - Chủ TK
+    val zaloPhone: String = "",     // <--- MỚI: Số Zalo liên hệ
+    val status: String = "PENDING", // PENDING, APPROVED, REJECTED
+    val timestamp: Date = Date()
 )

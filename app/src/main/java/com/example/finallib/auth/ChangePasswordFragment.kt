@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.finallib.R
+import com.example.finallib.utils.LogUtils // Import LogUtils
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 
@@ -53,11 +54,15 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
         if (user != null && user.email != null) {
             val credential = EmailAuthProvider.getCredential(user.email!!, oldPass)
 
+            // Xác thực lại người dùng trước khi đổi mật khẩu (Bắt buộc)
             user.reauthenticate(credential)
                 .addOnSuccessListener {
                     user.updatePassword(newPass)
                         .addOnSuccessListener {
                             Toast.makeText(requireContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show()
+                            
+                            // --- GHI LOG TẠI ĐÂY ---
+                            LogUtils.writeLog("CHANGE_PASSWORD", "Người dùng đã đổi mật khẩu thành công")
 
                             parentFragmentManager.popBackStack()
                         }
