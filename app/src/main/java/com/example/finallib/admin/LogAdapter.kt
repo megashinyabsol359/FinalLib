@@ -1,5 +1,6 @@
 package com.example.finallib.admin
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +21,6 @@ class LogAdapter(private val logList: List<SystemLog>) : RecyclerView.Adapter<Lo
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LogViewHolder {
-        // File layout item_log.xml
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_log, parent, false)
         return LogViewHolder(view)
     }
@@ -28,15 +28,42 @@ class LogAdapter(private val logList: List<SystemLog>) : RecyclerView.Adapter<Lo
     override fun onBindViewHolder(holder: LogViewHolder, position: Int) {
         val log = logList[position]
 
+        // 1. Hiển thị Action và Đổi màu để dễ phân biệt
         holder.tvAction.text = log.action
-        holder.tvUserInfo.text = "${log.fullName} (${log.email})" // Hiện Tên + Email
+        
+        // Logic tô màu đơn giản:
+        when {
+            // Màu ĐỎ cho các hành động tiêu cực/nguy hiểm
+            log.action.contains("REJECT") || log.action.contains("DELETE") || log.action.contains("ERROR") -> {
+                holder.tvAction.setTextColor(Color.RED)
+            }
+            // Màu XANH LÁ cho các hành động tích cực/thành công
+            log.action.contains("APPROVE") || log.action.contains("SUCCESS") || log.action.contains("PAYMENT") -> {
+                holder.tvAction.setTextColor(Color.parseColor("#4CAF50")) 
+            }
+            // Màu ĐEN cho các hành động bình thường
+            else -> {
+                holder.tvAction.setTextColor(Color.BLACK)
+            }
+        }
+
+        // 2. Hiển thị User Info thông minh hơn
+        // Nếu không có tên (do LogUtils không lấy được), thì chỉ hiện Email cho đỡ rối
+        if (log.fullName.isNotEmpty() && log.fullName != "Unknown") {
+            holder.tvUserInfo.text = "${log.fullName} (${log.email})"
+        } else {
+            holder.tvUserInfo.text = log.email // Chỉ hiện email
+        }
+
+        // 3. Hiển thị chi tiết
         holder.tvDetails.text = log.details
 
+        // 4. Format thời gian
         if (log.timestamp != null) {
-            val sdf = SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
+            val sdf = SimpleDateFormat("HH:mm - dd/MM/yyyy", Locale.getDefault())
             holder.tvTime.text = sdf.format(log.timestamp)
         } else {
-            holder.tvTime.text = "..."
+            holder.tvTime.text = "Vừa xong"
         }
     }
 

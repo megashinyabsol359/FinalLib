@@ -4,7 +4,6 @@ import java.io.Serializable
 import java.util.Date
 
 data class Review(
-    val id: String = "",
     val bookId: String = "",
     val userId: String = "",
     val userName: String = "",

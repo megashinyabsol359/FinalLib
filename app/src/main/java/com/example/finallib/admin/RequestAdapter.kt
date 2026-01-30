@@ -8,20 +8,21 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
+import com.example.finallib.model.Seller
 import com.example.finallib.model.SellerRequest
-import com.example.finallib.model.SystemLog
+import com.example.finallib.utils.LogUtils
 import com.google.firebase.firestore.FirebaseFirestore
 
 class RequestAdapter(
     private val requestList: MutableList<SellerRequest>,
-    private val docIds: MutableList<String> // Lưu ID document
+    private val docIds: MutableList<String>
 ) : RecyclerView.Adapter<RequestAdapter.RequestViewHolder>() {
 
     class RequestViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvName: TextView = view.findViewById(R.id.tv_req_name)
-        val tvEmail: TextView = view.findViewById(R.id.tv_req_email)
+        val tvInfo: TextView = view.findViewById(R.id.tv_req_email) // Đổi ID cho khớp logic
         val btnApprove: Button = view.findViewById(R.id.btn_approve)
-        val btnReject: Button = view.findViewById(R.id.btn_reject) // Nút Bỏ qua mới
+        val btnReject: Button = view.findViewById(R.id.btn_reject)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RequestViewHolder {
@@ -30,35 +31,71 @@ class RequestAdapter(
     }
 
     override fun onBindViewHolder(holder: RequestViewHolder, position: Int) {
-        val request = requestList[position]
-        holder.tvName.text = request.fullName
-        holder.tvEmail.text = request.userEmail
+        val req = requestList[position]
 
-        // Xử lý nút DUYỆT
+        // 1. Hiển thị thông tin
+        holder.tvName.text = "Shop: ${req.shopName}"
+        
+        // Gộp thông tin chi tiết vào 1 TextView
+        val infoText = """
+            Người gửi: ${req.shopName}
+            Email: ${req.email}
+            Zalo: ${req.zaloPhone}
+            NH: ${req.bankInfo}
+        """.trimIndent()
+        holder.tvInfo.text = infoText
+
+        // 2. Sự kiện Duyệt
         holder.btnApprove.setOnClickListener {
-            approveUser(request, docIds[position], position, holder.itemView)
+            approveRequest(req, docIds[position], position, holder.itemView)
         }
 
-        // Xử lý nút BỎ QUA
+        // 3. Sự kiện Từ chối
         holder.btnReject.setOnClickListener {
-            rejectRequest(request, docIds[position], position, holder.itemView)
+            rejectRequest(req, docIds[position], position, holder.itemView)
         }
     }
 
-    // Hàm Duyệt
-    private fun approveUser(req: SellerRequest, docId: String, position: Int, view: View) {
+    private fun approveRequest(req: SellerRequest, docId: String, position: Int, view: View) {
         val db = FirebaseFirestore.getInstance()
+        val batch = db.batch()
 
-        db.collection("users").document(req.userId)
-            .update("role", "Seller")
+        // B1: Cập nhật Role User -> Seller
+        val userRef = db.collection("users").document(req.userId)
+        batch.update(userRef, "role", "Seller")
+
+        // B2: Tạo hồ sơ trong bảng Sellers
+        val sellerRef = db.collection("sellers").document(req.userId)
+        val newSeller = Seller(
+            userId = req.userId,
+            shopName = req.shopName,
+            bankInfo = req.bankInfo,
+            zaloPhone = req.zaloPhone,
+            totalRevenue = 0,
+            isActive = true
+        )
+        batch.set(sellerRef, newSeller)
+
+        // B3: Xóa đơn yêu cầu
+        val requestRef = db.collection("seller_requests").document(docId)
+        batch.delete(requestRef)
+
+        batch.commit().addOnSuccessListener {
+            Toast.makeText(view.context, "Đã duyệt ${req.shopName}!", Toast.LENGTH_SHORT).show()
+            LogUtils.writeLog("ADMIN_APPROVE", "Duyệt Shop: ${req.shopName} - User: ${req.email}")
+            removeItem(position)
+        }.addOnFailureListener {
+            Toast.makeText(view.context, "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun rejectRequest(req: SellerRequest, docId: String, position: Int, view: View) {
+        val db = FirebaseFirestore.getInstance()
+        
+        db.collection("seller_requests").document(docId).delete()
             .addOnSuccessListener {
-
-                db.collection("seller_requests").document(docId).delete()
-
-                val log = SystemLog("", "Admin", "Admin", "Admin", "APPROVE_SELLER", "Đã duyệt ${req.userEmail}")
-                db.collection("system_logs").add(log)
-
-                Toast.makeText(view.context, "Đã duyệt lên Seller!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(view.context, "Đã từ chối đơn!", Toast.LENGTH_SHORT).show()
+                LogUtils.writeLog("ADMIN_REJECT", "Từ chối Shop: ${req.shopName} - User: ${req.email}")
                 removeItem(position)
             }
             .addOnFailureListener {
@@ -66,26 +103,6 @@ class RequestAdapter(
             }
     }
 
-    // Hàm B
-    private fun rejectRequest(req: SellerRequest, docId: String, position: Int, view: View) {
-        val db = FirebaseFirestore.getInstance()
-
-        db.collection("seller_requests").document(docId)
-            .delete()
-            .addOnSuccessListener {
-                Toast.makeText(view.context, "Đã từ chối yêu cầu!", Toast.LENGTH_SHORT).show()
-
-                val log = SystemLog("", "Admin", "Admin", "Admin", "REJECT_SELLER", "Đã từ chối ${req.userEmail}")
-                db.collection("system_logs").add(log)
-
-                removeItem(position)
-            }
-            .addOnFailureListener {
-                Toast.makeText(view.context, "Lỗi xóa: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    // Xoá item
     private fun removeItem(position: Int) {
         if (position >= 0 && position < requestList.size) {
             requestList.removeAt(position)

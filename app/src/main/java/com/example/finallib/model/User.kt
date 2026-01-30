@@ -8,4 +8,5 @@ data class User(
     val email: String = "",
     val fullName: String = "",
     val role: String = "User",
+    val wallet: Long = 0
 )

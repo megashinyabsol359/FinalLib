@@ -20,6 +20,8 @@ import com.example.finallib.data.UserBooksRepository
 import com.example.finallib.model.Book
 import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
+import com.example.finallib.model.SystemLog
+import com.example.finallib.payment.PaymentActivity
 import com.example.finallib.utils.FileDownloadService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,7 +29,6 @@ import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.UUID
 
 class BookDetailActivity : AppCompatActivity() {
 
@@ -102,6 +103,15 @@ class BookDetailActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Kiểm tra lại purchase data khi quay về từ PaymentActivity
+        if (book.accessibility == "private") {
+            val btnRead: Button = findViewById(R.id.btn_read)
+            checkAndSetupPrivateBookAccess(btnRead)
+        }
+    }
+
     private fun showRatingDialog() {
         val currentUser = auth.currentUser
         if (currentUser == null) {
@@ -143,9 +153,7 @@ class BookDetailActivity : AppCompatActivity() {
     }
 
     private fun submitReview(rating: Float, comment: String, userId: String, userName: String) {
-        val reviewId = UUID.randomUUID().toString()
         val review = Review(
-            id = reviewId,
             bookId = book.id,
             userId = userId,
             userName = userName,
@@ -154,8 +162,7 @@ class BookDetailActivity : AppCompatActivity() {
         )
 
         db.collection("reviews")
-            .document(reviewId)
-            .set(review)
+            .add(review)
             .addOnSuccessListener {
                 Toast.makeText(this, "Đánh giá đã được lưu", Toast.LENGTH_SHORT).show()
                 // Refresh reviews list
@@ -216,7 +223,7 @@ class BookDetailActivity : AppCompatActivity() {
         // Download file
         lifecycleScope.launch(Dispatchers.IO) {
             val fileName = "${book.id}_${book.title.replace(" ", "_")}.epub"
-
+            
             val result = FileDownloadService.downloadFile(
                 context = this@BookDetailActivity,
                 fileUrl = book.url,
@@ -230,6 +237,11 @@ class BookDetailActivity : AppCompatActivity() {
                         userBooksRepository.addBookToUser(user.uid, book.id)
                     }
                 }
+                // Tăng read_count cho sách
+                increaseReadCount(book.id)
+
+                // Tạo system log
+                createReadingLog()
 
                 // Chuyển sang BookReaderActivity
                 val intent = Intent(this@BookDetailActivity, BookReaderActivity::class.java)
@@ -318,47 +330,77 @@ class BookDetailActivity : AppCompatActivity() {
             return
         }
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val purchase = Purchase(
-                    id = UUID.randomUUID().toString(),
-                    bookId = book.id,
+        // Chuyển sang màn hình thanh toán
+        goToPayment()
+    }
+
+    /**
+     * Chuyển sang màn hình thanh toán
+     */
+    private fun goToPayment() {
+        val intent = Intent(this, PaymentActivity::class.java)
+        intent.putExtra("book", book)
+        startActivity(intent)
+    }
+
+    /**
+     * Tăng read_count cho sách
+     */
+    private fun increaseReadCount(bookId: String) {
+        db.collection("books").document(bookId)
+            .update("readCount", com.google.firebase.firestore.FieldValue.increment(1))
+            .addOnSuccessListener {
+                // Thành công
+            }
+            .addOnFailureListener { e ->
+                // Có thể log lỗi nếu cần
+            }
+    }
+
+    /**
+     * Lấy role người dùng từ Firestore
+     */
+    private fun getUserRole(userId: String, callback: (String) -> Unit) {
+        db.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                val role = document.getString("role") ?: "reader"
+                callback(role)
+            }
+            .addOnFailureListener {
+                callback("reader")  // Default role
+            }
+    }
+
+    /**
+     * Tạo system log khi người dùng đọc sách
+     */
+    private fun createReadingLog() {
+        val currentUser = auth.currentUser
+        if (currentUser == null) return
+
+        try {
+            // Lấy role từ Firestore
+            getUserRole(currentUser.uid) { role ->
+                val systemLog = SystemLog(
                     userId = currentUser.uid,
-                    purchasedAt = System.currentTimeMillis(),
-                    price = 0.0,
-                    paymentMethod = "test"
+                    email = currentUser.email ?: "",
+                    fullName = currentUser.displayName ?: "Ẩn danh",
+                    role = role,
+                    action = "READING",
+                    details = "Đọc sách ${book.title} (${book.id})"
                 )
 
-                db.collection("purchases")
-                    .document(purchase.id)
-                    .set(purchase)
-                    .await()
-
-                userBooksRepository.addBookToUser(currentUser.uid, book.id)
-
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@BookDetailActivity,
-                        "Mua sách thành công!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    // Change button back to read
-                    btnRead.text = "Đọc sách"
-                    btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
-                    btnRead.setOnClickListener {
-                        downloadAndReadBook()
+                db.collection("system_logs")
+                    .add(systemLog)
+                    .addOnSuccessListener {
+                        // Log thành công
                     }
-                }
-            } catch (e: Exception) {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@BookDetailActivity,
-                        "Lỗi mua sách: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                    .addOnFailureListener { e ->
+                        // Log thất bại (không cần notify user)
+                    }
             }
+        } catch (e: Exception) {
+            // Handle exception silently
         }
     }
 

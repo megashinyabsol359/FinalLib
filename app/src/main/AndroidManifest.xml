@@ -147,6 +147,32 @@
             </intent-filter>
 
             <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
+        <activity
+            android:name=".search.SearchActivity"
+            android:exported="false"
+            android:label="Tìm kiếm"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity
+            android:name=".search.BookDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết sách"
+            android:parentActivityName=".search.SearchActivity" />
+
+        <activity
+            android:name=".search.BookReaderActivity"
+            android:exported="false"
+            android:label="Đọc sách"
+            android:parentActivityName=".search.BookDetailActivity" />
+
+        <activity
+            android:name=".payment.PaymentActivity"
+            android:exported="true"
+            android:parentActivityName=".search.BookDetailActivity"
+            android:label="Merchant Demo"
+            android:launchMode="singleTask"
+            >
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -185,6 +211,8 @@
                 <data android:pathPattern=".*\\.WEBPUB" />
                 <data android:pathPattern=".*\\.zab" />
                 <data android:pathPattern=".*\\.ZAB" />
+                <data android:scheme="demozpdk"
+                    android:host="app" />
             </intent-filter>
 
         </activity>
@@ -225,6 +253,16 @@
             android:label="Đọc sách"
             android:parentActivityName=".search.BookDetailActivity" />
 
+            android:name=".admin.BookApprovalActivity"
+            android:exported="false"
+            android:label="Duyệt Sách Upload"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity
+            android:name=".admin.BookApprovalDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết sách cần duyệt"
+            android:parentActivityName=".admin.BookApprovalActivity" />
 
     </application>
 

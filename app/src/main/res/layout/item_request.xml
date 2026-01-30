@@ -1,47 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="12dp"
-    android:gravity="center_vertical">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/tv_req_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nguyen Van A"
+            android:text="Shop Name"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textColor="#000000"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="8dp"/>
 
         <TextView
             android:id="@+id/tv_req_email"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="email@example.com"
-            android:textSize="14sp"/>
+            android:text="Email: ...\nZalo: ...\nBank: ..."
+            android:lineSpacingExtra="4dp"
+            android:textColor="#555555"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="16dp">
+
+            <Button
+                android:id="@+id/btn_reject"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Từ chối"
+                android:backgroundTint="#F44336"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_approve"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Duyệt"
+                android:backgroundTint="#4CAF50"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
     </LinearLayout>
-
-    <Button
-        android:id="@+id/btn_reject"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bỏ qua"
-        android:backgroundTint="#F44336"
-        android:textSize="12sp"
-        android:layout_marginEnd="8dp"/>
-
-    <Button
-        android:id="@+id/btn_approve"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Duyệt"
-        android:backgroundTint="#4CAF50"
-        android:textSize="12sp"/>
-</LinearLayout>
+</androidx.cardview.widget.CardView>

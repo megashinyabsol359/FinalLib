@@ -29,6 +29,7 @@ import com.example.finallib.admin.AdminNotificationFragment
 import com.example.finallib.search.SearchActivity
 import com.example.finallib.admin.UserListFragment
 import com.example.finallib.bookshelf.BookshelfFragment
+import com.example.finallib.admin.BookApprovalActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -105,11 +106,25 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, SearchActivity::class.java))
                 }
 
+                R.id.nav_upload_book -> {
+                    showUploadDialog()
+                }
+
+                // Tìm kiếm
+                R.id.nav_search -> {
+                    startActivity(Intent(this, SearchActivity::class.java))
+                }
+
                 // User: Đăng ký bán hàng
                 R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment())
 
                 // Admin: Duyệt đơn
                 R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment())
+
+                // Admin: Duyệt sách upload
+                R.id.nav_book_approval -> {
+                    startActivity(Intent(this, BookApprovalActivity::class.java))
+                }
 
                 // Admin: Danh sách tài khoản
                 R.id.nav_user_list -> replaceFragment(UserListFragment())
@@ -146,6 +161,33 @@ class MainActivity : AppCompatActivity() {
             transaction.addToBackStack(null)
         }
         transaction.commit()
+    }
+        
+    private fun showUploadDialog() {
+        uploadDialog = UploadBookDialog(
+            context = this,
+            lifecycleScope = lifecycleScope,
+            fileLauncher = filePickerLauncher,
+            onSuccess = { docId ->
+                // Callback khi upload thành công
+            }
+        )
+        uploadDialog?.show()
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var fileName = "book_file"
+        try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                it.moveToFirst()
+                fileName = it.getString(nameIndex)
+            }
+        } catch (e: Exception) {
+            fileName = uri.lastPathSegment ?: "book_file"
+        }
+        return fileName
     }
 
     private fun showUploadDialog() {
@@ -212,6 +254,8 @@ class MainActivity : AppCompatActivity() {
                         "Admin" -> {
                             menu.findItem(R.id.nav_logs)?.isVisible = true
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
+                            menu.findItem(R.id.nav_user_list)?.isVisible = true
+                            menu.findItem(R.id.nav_book_approval)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true
