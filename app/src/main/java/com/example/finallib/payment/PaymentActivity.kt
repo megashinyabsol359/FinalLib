@@ -140,6 +140,7 @@ class PaymentActivity : AppCompatActivity() {
                                     id = UUID.randomUUID().toString(),
                                     bookId = book.id,
                                     userId = currentUser.uid,
+                                    sellerId = book.sellerId,
                                     purchasedAt = System.currentTimeMillis(),
                                     price = book.price,
                                     paymentMethod = "ZaloPay"

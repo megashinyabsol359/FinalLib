@@ -327,6 +327,19 @@ class BookDetailActivity : AppCompatActivity() {
             return
         }
 
+        // Check if current user is the seller of this book
+        if (book.sellerId.isNotEmpty() && book.sellerId == currentUser.uid) {
+            // Seller can read their own book without purchase
+            btnRead.text = "Tải sách (Của tôi)"
+            btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_green_light))
+            btnRead.setOnClickListener {
+                checkLocalAndDownload()
+            }
+            // Re-check if already downloaded to disable
+            checkDownloadStatus(btnRead)
+            return
+        }
+
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val querySnapshot = db.collection("purchases")
