@@ -1,8 +1,9 @@
 package com.example.finallib.utils
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 
@@ -36,9 +37,9 @@ class TagAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagViewHolder {
-        val checkBox = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_tag_checkbox, parent, false) as CheckBox
-        return TagViewHolder(checkBox)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_tag_checkbox, parent, false)
+        return TagViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TagViewHolder, position: Int) {

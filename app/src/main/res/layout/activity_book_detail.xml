@@ -121,7 +121,7 @@
                 android:id="@+id/btn_read"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Đọc sách"
+                android:text="Tải sách"
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:layout_marginBottom="8dp" />

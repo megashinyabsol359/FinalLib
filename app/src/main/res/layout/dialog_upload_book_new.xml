@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,13 +21,12 @@
             android:layout_marginBottom="16dp"
             android:gravity="center" />
 
-        <!-- Tên Sách (Bắt Buộc) -->
+        <!-- Tên Sách -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:hint="Tên sách *">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_title"
                 android:layout_width="match_parent"
@@ -34,13 +34,12 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Tác Giả (Bắt Buộc) -->
+        <!-- Tác Giả -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:hint="Tác giả *">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_author"
                 android:layout_width="match_parent"
@@ -68,14 +67,13 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:hint="Mô tả sách *">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine"
-                android:minLines="3"
-                android:maxLines="5" />
+                android:minLines="2"
+                android:maxLines="4" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Tags (Danh Sách Checkbox) -->
@@ -131,87 +129,59 @@
             </LinearLayout>
         </FrameLayout>
 
-        <!-- Chọn File (Bắt Buộc) -->
+        <!-- Chọn File -->
         <Button
             android:id="@+id/btn_select_file"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:text="Chọn File Sách"
             android:backgroundTint="#FF9800"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- Hiển thị file đã chọn -->
         <TextView
             android:id="@+id/tv_selected_file"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Chưa chọn file"
             android:textSize="12sp"
-            android:textColor="#666666"
             android:padding="8dp"
             android:background="#F5F5F5"
             android:layout_marginBottom="16dp" />
 
-        <!-- Ảnh Bìa Sách (Optional) -->
+        <!-- Ảnh Bìa -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ảnh bìa sách (Optional)"
+            android:text="Ảnh bìa sách"
             android:textStyle="bold"
-            android:layout_marginBottom="8dp"
-            android:textSize="14sp" />
+            android:layout_marginBottom="8dp" />
 
         <ImageView
             android:id="@+id/iv_book_cover"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:scaleType="centerCrop"
-            android:contentDescription="Ảnh bìa sách"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="8dp" />
+            android:layout_height="120dp"
+            android:scaleType="centerInside"
+            android:background="#EEEEEE" />
 
         <Button
             android:id="@+id/btn_select_cover"
             android:layout_width="match_parent"
-            android:layout_height="45dp"
+            android:layout_height="wrap_content"
             android:text="Chọn Ảnh Bìa"
             android:backgroundTint="#2196F3"
             android:layout_marginBottom="16dp" />
 
-        <!-- Accessibility (Public/Private) -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Loại sách"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"
-            android:textSize="14sp" />
-
+        <!-- Accessibility -->
         <RadioGroup
             android:id="@+id/rg_accessibility"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/rb_public"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Public (Miễn phí)"
-                android:checked="true" />
-
-            <RadioButton
-                android:id="@+id/rb_private"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Private (Trả phí)" />
-
+            <RadioButton android:id="@+id/rb_public" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Miễn phí" android:checked="true" />
+            <RadioButton android:id="@+id/rb_private" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Trả phí" />
         </RadioGroup>
 
-        <!-- Giá Tiền (Chỉ hiện khi chọn Private) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_price"
             android:layout_width="match_parent"
@@ -219,7 +189,6 @@
             android:layout_marginBottom="16dp"
             android:hint="Giá tiền (VND)"
             android:visibility="gone">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_price"
                 android:layout_width="match_parent"
@@ -227,40 +196,34 @@
                 android:inputType="numberDecimal" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/progress_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <!-- Status Text -->
         <TextView
             android:id="@+id/tv_upload_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="12sp"
-            android:textColor="#666666"
             android:gravity="center"
+            android:textSize="12sp"
             android:layout_marginBottom="16dp" />
 
-        <!-- Button Upload -->
         <Button
             android:id="@+id/btn_upload"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:text="Upload Sách"
             android:backgroundTint="#4CAF50"
             android:layout_marginBottom="8dp" />
 
-        <!-- Button Hủy -->
         <Button
             android:id="@+id/btn_cancel"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:text="Hủy"
             android:backgroundTint="#9E9E9E" />
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

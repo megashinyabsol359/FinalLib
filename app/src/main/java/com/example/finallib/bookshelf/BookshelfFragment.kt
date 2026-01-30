@@ -10,6 +10,8 @@ import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,6 +32,7 @@ import com.example.finallib.databinding.FragmentBookshelfBinding
 import com.example.finallib.main.Application
 import com.example.finallib.opds.GridAutoFitLayoutManager
 import com.example.finallib.reader.ReaderActivityContract
+import com.example.finallib.utils.FileDownloadService
 import com.example.finallib.utils.viewLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.collectLatest
@@ -111,10 +114,28 @@ class BookshelfFragment : Fragment() {
                 )
             )
         }
+
+        // Setup Search
+        binding.bookshelfSearchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+                binding.bookshelfSearchClearBtn.visibility = if (query.isEmpty()) View.GONE else View.VISIBLE
+                filterBooks(query)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        binding.bookshelfSearchClearBtn.setOnClickListener {
+            binding.bookshelfSearchEditText.text.clear()
+        }
+
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 bookshelfViewModel.books.collectLatest {
                     bookshelfAdapter.submitList(it)
+                    // Apply current search filter if any
+                    filterBooks(binding.bookshelfSearchEditText.text.toString())
                 }
             }
         }
@@ -137,6 +158,19 @@ class BookshelfFragment : Fragment() {
                     selected = which
                 }
                 .show()
+        }
+    }
+
+    private fun filterBooks(query: String) {
+        val allBooks = bookshelfViewModel.books.value
+        if (query.isEmpty()) {
+            bookshelfAdapter.submitList(allBooks)
+        } else {
+            val filtered = allBooks.filter { 
+                it.title?.contains(query, ignoreCase = true) == true || 
+                it.author?.contains(query, ignoreCase = true) == true 
+            }
+            bookshelfAdapter.submitList(filtered)
         }
     }
 
@@ -176,11 +210,33 @@ class BookshelfFragment : Fragment() {
                 startActivity(intent)
             }
             
-            is BookshelfViewModel.Event.ImportingBook -> {
+            is BookshelfViewModel.Event.LaunchRemoteReader -> {
+                downloadAndOpenRemoteBook(event.book)
+            }
+        }
+    }
+    
+    private fun downloadAndOpenRemoteBook(book: Book) {
+        val fileName = "${book.identifier}_${book.title?.replace(" ", "_")}.epub"
+        
+        Toast.makeText(requireContext(), "Đang tải sách: ${book.title}", Toast.LENGTH_SHORT).show()
+        
+        lifecycleScope.launch {
+            val result = FileDownloadService.downloadFile(
+                context = requireContext(),
+                fileUrl = book.href,
+                fileName = fileName
+            )
+
+            result.onSuccess { filePath ->
+                bookshelfViewModel.importDownloadedBook(book, filePath)
+            }
+
+            result.onFailure { error ->
                 Toast.makeText(
-                    requireContext(), 
-                    "Đang tải và nhập sách: ${event.title}...", 
-                    Toast.LENGTH_SHORT
+                    requireContext(),
+                    "Lỗi tải sách: ${error.message}",
+                    Toast.LENGTH_LONG
                 ).show()
             }
         }

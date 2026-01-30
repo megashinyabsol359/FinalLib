@@ -25,12 +25,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import org.readium.r2.shared.util.AbsoluteUrl
 import org.readium.r2.shared.util.toUrl
 import java.util.concurrent.ConcurrentHashMap
 import timber.log.Timber
+import java.io.File
 
 class BookshelfViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -49,54 +51,12 @@ class BookshelfViewModel(application: Application) : AndroidViewModel(applicatio
     private val isStoreBookCache = ConcurrentHashMap<String, Boolean>()
     private val cacheUpdateTrigger = MutableStateFlow(0)
 
-    val books: StateFlow<List<Book>> = combine(
-        app.bookRepository.books(),
-        remotePurchasedBooks,
-        purchasedBookIds,
-        cacheUpdateTrigger
-    ) { localBooks, remoteBooks, purchasedIds, _ ->
-        val filteredLocalBooks = localBooks.filter { localBook ->
-            val identifier = localBook.identifier
-            
-            if (purchasedIds.contains(identifier)) {
-                return@filter true
-            }
-            
-            val isStoreBook = isStoreBookCache[identifier]
-            if (isStoreBook == null) {
-                checkIfStoreBook(identifier)
-                return@filter true 
-            }
-            
-            !isStoreBook
-        }
-
-        val localKeys = filteredLocalBooks.map { 
-            "${it.title?.lowercase()?.trim()}|${it.author?.lowercase()?.trim()}" 
-        }.toSet()
-        val localIdentifiers = filteredLocalBooks.map { it.identifier }.toSet()
-        
-        val notDownloadedRemoteBooks = remoteBooks.filter { remoteBook ->
-            val remoteKey = "${remoteBook.title?.lowercase()?.trim()}|${remoteBook.author?.lowercase()?.trim()}"
-            !localIdentifiers.contains(remoteBook.identifier) && !localKeys.contains(remoteKey)
-        }
-
-        filteredLocalBooks + notDownloadedRemoteBooks
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Only show books that are actually downloaded (in local database)
+    val books: StateFlow<List<Book>> = app.bookRepository.books()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         refreshPurchasedBooks()
-        
-        // Listen for import success to open the book
-        viewModelScope.launch {
-            for (event in app.bookshelf.channel) {
-                if (event is Bookshelf.Event.ImportPublicationSuccess) {
-                    // When a book is successfully imported, it will appear in the local list.
-                    // The UI will refresh, and the user can then click it to open.
-                    // If you want it to open automatically, we'd need to find the latest added book ID.
-                }
-            }
-        }
     }
 
     fun refreshPurchasedBooks() {
@@ -170,9 +130,21 @@ class BookshelfViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun deletePublication(book: Book) =
         viewModelScope.launch {
+            // 1. Delete from local database and filesystem
             if (book.id != null) {
                 app.bookshelf.deleteBook(book)
-            } else {
+            }
+
+            // 2. Remove from Firestore purchased list so it doesn't reappear
+            val userId = auth.currentUser?.uid
+            if (userId != null && book.identifier.isNotEmpty()) {
+                userBooksRepository.removeBookFromUser(userId, book.identifier)
+                // Refresh to update local state
+                refreshPurchasedBooks()
+            }
+            
+            // If it was a purely remote book (though the 'books' flow now filters them out)
+            if (book.id == null) {
                 remotePurchasedBooks.value = remotePurchasedBooks.value.filter { it.identifier != book.identifier }
             }
         }
@@ -193,16 +165,31 @@ class BookshelfViewModel(application: Application) : AndroidViewModel(applicatio
         if (book.id != null) {
             openLocalPublication(book.id!!)
         } else {
-            // It's a remote book. We import it first using the standard flow.
-            // This ensures it gets added to the local database and uses activity_reader.xml
             viewModelScope.launch {
-                val url = AbsoluteUrl(book.href)
-                if (url != null) {
-                    app.bookshelf.addPublicationFromWeb(url)
-                    // Inform the user that the book is being imported
-                    channel.send(Event.ImportingBook(book.title ?: ""))
+                val localBook = app.bookRepository.books().first().find { 
+                    it.identifier == book.identifier || 
+                    (it.title == book.title && it.author == book.author)
+                }
+                if (localBook != null) {
+                    openLocalPublication(localBook.id!!)
+                } else {
+                    channel.send(Event.LaunchRemoteReader(book))
                 }
             }
+        }
+    }
+
+    fun importDownloadedBook(book: Book, filePath: String) {
+        viewModelScope.launch {
+            val file = File(filePath)
+            val url = file.toUrl()
+            app.bookshelf.addPublication(url as AbsoluteUrl)
+                .onSuccess { bookId ->
+                    openLocalPublication(bookId)
+                }
+                .onFailure {
+                    Timber.e("Failed to import downloaded book: $it")
+                }
         }
     }
 
@@ -223,6 +210,6 @@ class BookshelfViewModel(application: Application) : AndroidViewModel(applicatio
     sealed class Event {
         class OpenPublicationError(val error: OpeningError) : Event()
         class LaunchReader(val arguments: ReaderActivityContract.Arguments) : Event()
-        class ImportingBook(val title: String) : Event()
+        class LaunchRemoteReader(val book: Book) : Event()
     }
 }

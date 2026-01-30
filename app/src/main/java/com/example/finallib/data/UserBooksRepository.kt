@@ -45,4 +45,18 @@ class UserBooksRepository {
             userDocRef.update("purchasedBooks", FieldValue.arrayUnion(bookId)).await()
         }
     }
+
+    /**
+     * Removes a book from a user's purchased list in Firestore.
+     * @param userId The ID of the user.
+     * @param bookId The ID of the book to remove.
+     */
+    suspend fun removeBookFromUser(userId: String, bookId: String) {
+        try {
+            val userDocRef = userBooksCollection.document(userId)
+            userDocRef.update("purchasedBooks", FieldValue.arrayRemove(bookId)).await()
+        } catch (e: Exception) {
+            // Log or handle error
+        }
+    }
 }
