@@ -26,7 +26,7 @@ import com.example.finallib.auth.ChangePasswordFragment
 import com.example.finallib.auth.RegisterSellerFragment
 import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
-import com.example.finallib.search.SearchActivity
+import com.example.finallib.search.MainSearchFragment
 import com.example.finallib.admin.UserListFragment
 import com.example.finallib.bookshelf.BookshelfFragment
 
@@ -34,23 +34,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
-    private var uploadDialog: UploadBookDialog? = null
-
-    // File picker để chọn file sách
-    private val filePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val fileName = getFileNameFromUri(it)
-            // Kiểm tra loại file (sách hay ảnh)
-            val mimeType = contentResolver.getType(it)
-            if (mimeType?.startsWith("image/") == true) {
-                uploadDialog?.setSelectedCover(it)
-            } else {
-                uploadDialog?.setSelectedFile(it, fileName)
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +66,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 else if (supportFragmentManager.backStackEntryCount > 0) {
                     supportFragmentManager.popBackStack()
+                    // Update title after pop
+                    updateTitleAfterPop()
                 }
                 else {
                     isEnabled = false
@@ -94,33 +79,22 @@ class MainActivity : AppCompatActivity() {
         // Menu
         navView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> replaceFragment(BookshelfFragment())
+                R.id.nav_home -> replaceFragment(BookshelfFragment(), "Tủ sách")
 
-                R.id.nav_upload_book -> {
-                    showUploadDialog()
-                }
+                R.id.nav_upload_book -> replaceFragment(UploadBookFragment(), "Upload Sách")
 
-                // Tìm kiếm
-                R.id.nav_search -> {
-                    startActivity(Intent(this, SearchActivity::class.java))
-                }
+                R.id.nav_search -> replaceFragment(MainSearchFragment(), "Tìm kiếm")
 
-                // User: Đăng ký bán hàng
-                R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment())
+                R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment(), "Đăng ký bán hàng")
 
-                // Admin: Duyệt đơn
-                R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment())
+                R.id.nav_admin_noti -> replaceFragment(AdminNotificationFragment(), "Duyệt đơn")
 
-                // Admin: Danh sách tài khoản
-                R.id.nav_user_list -> replaceFragment(UserListFragment())
+                R.id.nav_user_list -> replaceFragment(UserListFragment(), "Danh sách người dùng")
 
-                // Admin: Xem Log
-                R.id.nav_logs -> replaceFragment(SystemLogFragment())
+                R.id.nav_logs -> replaceFragment(SystemLogFragment(), "Hệ thống Log")
 
-                // Chung: Đổi mật khẩu
-                R.id.nav_change_pass -> replaceFragment(ChangePasswordFragment())
+                R.id.nav_change_pass -> replaceFragment(ChangePasswordFragment(), "Đổi mật khẩu")
 
-                // Đăng xuất (Thoát ra LoginActivity)
                 R.id.nav_logout -> {
                     FirebaseAuth.getInstance().signOut()
                     val intent = Intent(this, LoginActivity::class.java)
@@ -134,45 +108,36 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            replaceFragment(BookshelfFragment())
+            replaceFragment(BookshelfFragment(), "Tủ sách")
             navView.setCheckedItem(R.id.nav_home)
         }
     }
 
-    private fun replaceFragment(fragment: Fragment) {
+    private fun replaceFragment(fragment: Fragment, title: String) {
+        supportActionBar?.title = title
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.fragment_container, fragment)
-        if (fragment !is LibraryFragment) {
+        if (fragment !is BookshelfFragment) {
             transaction.addToBackStack(null)
         }
         transaction.commit()
     }
 
-    private fun showUploadDialog() {
-        uploadDialog = UploadBookDialog(
-            context = this,
-            lifecycleScope = lifecycleScope,
-            fileLauncher = filePickerLauncher,
-            onSuccess = { docId ->
-                // Callback khi upload thành công
-            }
-        )
-        uploadDialog?.show()
-    }
-
-    private fun getFileNameFromUri(uri: Uri): String {
-        var fileName = "book_file"
-        try {
-            val cursor = contentResolver.query(uri, null, null, null, null)
-            cursor?.use {
-                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                it.moveToFirst()
-                fileName = it.getString(nameIndex)
-            }
-        } catch (e: Exception) {
-            fileName = uri.lastPathSegment ?: "book_file"
+    private fun updateTitleAfterPop() {
+        // Simple logic to restore title based on current fragment
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        val title = when (currentFragment) {
+            is BookshelfFragment -> "Tủ sách"
+            is MainSearchFragment -> "Tìm kiếm"
+            is UploadBookFragment -> "Upload Sách"
+            is RegisterSellerFragment -> "Đăng ký bán hàng"
+            is AdminNotificationFragment -> "Duyệt đơn"
+            is UserListFragment -> "Danh sách người dùng"
+            is SystemLogFragment -> "Hệ thống Log"
+            is ChangePasswordFragment -> "Đổi mật khẩu"
+            else -> "FinalLib"
         }
-        return fileName
+        supportActionBar?.title = title
     }
 
     private fun updateNavHeader() {
@@ -182,22 +147,25 @@ class MainActivity : AppCompatActivity() {
         if (user != null) {
             val headerView = navView.getHeaderView(0)
             val tvName = headerView.findViewById<TextView>(R.id.tv_header_name)
+            val tvRole = headerView.findViewById<TextView>(R.id.tv_header_role)
 
             db.collection("users").document(user.uid)
                 .get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
                         val fullName = document.getString("fullName")
+                        val role = document.getString("role") ?: "User"
                         tvName.text = fullName ?: "Xin chào!"
+                        tvRole.text = "[$role]"
                     }
                 }
                 .addOnFailureListener {
                     tvName.text = "Khách"
+                    tvRole.text = ""
                 }
         }
     }
 
-    // Phân quyền Menu
     private fun checkUserRole() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
@@ -208,10 +176,19 @@ class MainActivity : AppCompatActivity() {
                     val role = document.getString("role")
                     val menu = navView.menu
 
+                    menu.findItem(R.id.nav_logs)?.isVisible = false
+                    menu.findItem(R.id.nav_admin_noti)?.isVisible = false
+                    menu.findItem(R.id.nav_register_seller)?.isVisible = false
+                    menu.findItem(R.id.nav_upload_book)?.isVisible = false
+
                     when (role) {
                         "Admin" -> {
                             menu.findItem(R.id.nav_logs)?.isVisible = true
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
+                        }
+                        "Seller" -> {
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true

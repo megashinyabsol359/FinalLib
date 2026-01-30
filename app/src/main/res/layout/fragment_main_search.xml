@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#121212">
+
+    <!-- Search Input Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/et_search"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Nhập từ khóa tìm kiếm..."
+            android:inputType="text"
+            android:padding="10dp"
+            android:background="@drawable/search_input_background"
+            android:textSize="15sp"
+            android:textColor="@android:color/white"
+            android:textColorHint="#999999"
+            android:imeOptions="actionSearch"
+            android:maxLines="1" />
+
+        <ImageButton
+            android:id="@+id/btn_search"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:src="@android:drawable/ic_menu_search"
+            android:contentDescription="Tìm kiếm"
+            android:scaleType="centerInside"
+            app:tint="@android:color/white"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+    </LinearLayout>
+
+    <!-- Toggle Tag Filter Button -->
+    <Button
+        android:id="@+id/btn_toggle_tag_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hiện bộ lọc tags"
+        android:minHeight="0dp"
+        android:padding="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:backgroundTint="?attr/colorPrimary"
+        android:textSize="13sp"
+        android:textColor="#FFFFFF" />
+
+    <!-- Language Filter Section (Compact) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ngôn ngữ:"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="8dp" />
+
+        <Spinner
+            android:id="@+id/spinner_language"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="@drawable/search_input_background" />
+
+    </LinearLayout>
+
+    <!-- Tag Filter Section (BLACK BACKGROUND COMPACT HEIGHT) -->
+    <FrameLayout
+        android:id="@+id/tag_filter_container"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:visibility="gone"
+        android:background="#1E1E1E">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_tag_filters"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:clipToPadding="false"
+            android:scrollbars="vertical"
+            android:scrollbarThumbVertical="@android:color/darker_gray" />
+
+        <ProgressBar
+            android:id="@+id/progressBar_tags"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            android:indeterminateTint="@android:color/white" />
+
+    </FrameLayout>
+
+    <!-- Search Results Section -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ProgressBar
+            android:id="@+id/progressBar_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminateTint="@android:color/white" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_search_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_search_result"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Nhập từ khóa để tìm kiếm"
+            android:textSize="16sp"
+            android:textColor="#999999"
+            android:padding="16dp" />
+    </FrameLayout>
+
+</LinearLayout>
