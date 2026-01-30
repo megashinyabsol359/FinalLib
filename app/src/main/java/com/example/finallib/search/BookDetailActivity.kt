@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
+import com.example.finallib.data.UserBooksRepository
 import com.example.finallib.model.Book
 import com.example.finallib.model.Purchase
 import com.example.finallib.model.Review
@@ -34,6 +35,7 @@ class BookDetailActivity : AppCompatActivity() {
     private lateinit var book: Book
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val userBooksRepository = UserBooksRepository()
     private lateinit var reviewAdapter: ReviewAdapter
     private val reviewList = mutableListOf<Review>()
 
@@ -229,6 +231,12 @@ class BookDetailActivity : AppCompatActivity() {
             )
 
             result.onSuccess { filePath ->
+                // If the user is logged in, add the book to their collection
+                auth.currentUser?.let { user ->
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        userBooksRepository.addBookToUser(user.uid, book.id)
+                    }
+                }
                 // Tăng read_count cho sách
                 increaseReadCount(book.id)
 

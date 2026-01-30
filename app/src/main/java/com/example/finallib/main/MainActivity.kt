@@ -28,6 +28,7 @@ import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
 import com.example.finallib.search.SearchActivity
 import com.example.finallib.admin.UserListFragment
+import com.example.finallib.bookshelf.BookshelfFragment
 import com.example.finallib.admin.BookApprovalActivity
 
 class MainActivity : AppCompatActivity() {
@@ -94,7 +95,16 @@ class MainActivity : AppCompatActivity() {
         // Menu
         navView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> replaceFragment(LibraryFragment())
+                R.id.nav_home -> replaceFragment(BookshelfFragment())
+
+                R.id.nav_upload_book -> {
+                    showUploadDialog()
+                }
+
+                // Tìm kiếm
+                R.id.nav_search -> {
+                    startActivity(Intent(this, SearchActivity::class.java))
+                }
 
                 R.id.nav_upload_book -> {
                     showUploadDialog()
@@ -139,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            replaceFragment(LibraryFragment())
+            replaceFragment(BookshelfFragment())
             navView.setCheckedItem(R.id.nav_home)
         }
     }
@@ -153,6 +163,33 @@ class MainActivity : AppCompatActivity() {
         transaction.commit()
     }
         
+    private fun showUploadDialog() {
+        uploadDialog = UploadBookDialog(
+            context = this,
+            lifecycleScope = lifecycleScope,
+            fileLauncher = filePickerLauncher,
+            onSuccess = { docId ->
+                // Callback khi upload thành công
+            }
+        )
+        uploadDialog?.show()
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var fileName = "book_file"
+        try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                it.moveToFirst()
+                fileName = it.getString(nameIndex)
+            }
+        } catch (e: Exception) {
+            fileName = uri.lastPathSegment ?: "book_file"
+        }
+        return fileName
+    }
+
     private fun showUploadDialog() {
         uploadDialog = UploadBookDialog(
             context = this,

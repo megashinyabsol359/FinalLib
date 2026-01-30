@@ -300,7 +300,7 @@ class UploadBookDialog(
                 }
             }
 
-                result.onFailure { error ->
+          result.onFailure { error ->
                 lifecycleScope.launch(Dispatchers.Main) {
                     tvUploadStatus.text = "Lỗi: ${error.message}"
                     progressBar.visibility = android.view.View.GONE
