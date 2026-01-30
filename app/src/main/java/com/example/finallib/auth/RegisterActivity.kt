@@ -9,7 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.example.finallib.R
-import com.example.finallib.model.SystemLog // Import Model SystemLog
+import com.example.finallib.utils.LogUtils // Import LogUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -74,10 +74,12 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun saveUserToFirestore(userId: String, name: String, email: String) {
+        // Tạo thông tin User ban đầu
         val userMap = hashMapOf(
             "fullName" to name,
             "email" to email,
             "role" to "User",
+            "wallet" to 0L, // <--- KHỞI TẠO VÍ TIỀN = 0
             "createdAt" to System.currentTimeMillis()
         )
 
@@ -86,22 +88,13 @@ class RegisterActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 showLoading(false)
 
-                // Log
-                val log = SystemLog(
-                    userId = userId,
-                    email = email,
-                    fullName = name,
-                    role = "User",
-                    action = "REGISTER",
-                    details = "Đăng ký tài khoản mới"
-                )
-
-                db.collection("system_logs").add(log)
+                // --- GHI LOG MỚI (Dùng LogUtils) ---
+                // Lưu ý: Gọi LogUtils trước khi signOut để nó lấy được thông tin user hiện tại
+                LogUtils.writeLog("REGISTER", "Đăng ký tài khoản mới: $name")
 
                 Toast.makeText(this, "Đăng ký thành công! Vui lòng đăng nhập.", Toast.LENGTH_LONG).show()
 
-                auth.signOut()
-
+                auth.signOut() // Đăng xuất để người dùng đăng nhập lại từ đầu
                 finish()
             }
             .addOnFailureListener { e ->
@@ -119,7 +112,7 @@ class RegisterActivity : AppCompatActivity() {
             Toast.makeText(this, "Mật khẩu phải từ 6 ký tự trở lên", Toast.LENGTH_SHORT).show()
             return false
         }
-        if (pass != confirmPass) { // Kiểm tra mật khẩu nhập lại
+        if (pass != confirmPass) {
             Toast.makeText(this, "Mật khẩu xác nhận không khớp!", Toast.LENGTH_SHORT).show()
             return false
         }

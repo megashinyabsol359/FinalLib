@@ -12,6 +12,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.finallib.data.UserBooksRepository
 import com.example.finallib.data.model.Book
+import com.example.finallib.domain.Bookshelf
 import com.example.finallib.reader.OpeningError
 import com.example.finallib.reader.ReaderActivityContract
 import com.example.finallib.utils.EventChannel

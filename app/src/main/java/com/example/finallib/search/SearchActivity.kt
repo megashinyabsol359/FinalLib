@@ -189,13 +189,15 @@ class SearchActivity : AppCompatActivity() {
                         continue
                     }
 
+                    // Áp dụng include tags filter - phải có TẤT CẢ các tag được chọn
                     if (includedTags.isNotEmpty()) {
-                        val hasIncludedTag = includedTags.any { includedTag ->
+                        val hasAllIncludedTags = includedTags.all { includedTag ->
                             book.tags.any { it.equals(includedTag, ignoreCase = true) }
                         }
-                        if (!hasIncludedTag) continue
+                        if (!hasAllIncludedTags) continue
                     }
 
+                    // Áp dụng exclude tags filter - không được có bất kỳ tag bị exclude nào
                     if (excludedTags.isNotEmpty()) {
                         val hasExcludedTag = excludedTags.any { excludedTag ->
                             book.tags.any { it.equals(excludedTag, ignoreCase = true) }
@@ -253,13 +255,15 @@ class SearchActivity : AppCompatActivity() {
 
                     if (!matchesKeyword) continue
 
+                    // Áp dụng include tags filter - phải có TẤT CẢ các tag được chọn
                     if (includedTags.isNotEmpty()) {
-                        val hasIncludedTag = includedTags.any { includedTag ->
+                        val hasAllIncludedTags = includedTags.all { includedTag ->
                             book.tags.any { it.equals(includedTag, ignoreCase = true) }
                         }
-                        if (!hasIncludedTag) continue
+                        if (!hasAllIncludedTags) continue
                     }
 
+                    // Áp dụng exclude tags filter - không được có bất kỳ tag bị exclude nào
                     if (excludedTags.isNotEmpty()) {
                         val hasExcludedTag = excludedTags.any { excludedTag ->
                             book.tags.any { it.equals(excludedTag, ignoreCase = true) }

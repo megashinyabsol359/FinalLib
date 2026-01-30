@@ -89,9 +89,9 @@
     <FrameLayout
         android:id="@+id/tag_filter_container"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:visibility="gone"
-        android:background="#121212">
+        android:layout_height="match_parent"
+        android:layout_weight="0"
+        android:visibility="gone">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_tag_filters"

@@ -47,7 +47,21 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Mô Tả -->
+        <!-- Ngôn Ngữ (Bắt Buộc) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ngôn ngữ *"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/spinner_language"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Mô Tả Sách (Bắt Buộc) -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,64 +76,58 @@
                 android:maxLines="4" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Tags Header with Toggle -->
+        <!-- Tags (Danh Sách Checkbox) -->
         <LinearLayout
-            android:id="@+id/header_tags"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true">
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Tags *"
-                android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textStyle="bold" />
 
-            <ImageView
-                android:id="@+id/iv_toggle_tags"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/arrow_down_float"
-                app:tint="#666666" />
+            <Button
+                android:id="@+id/btn_toggle_tags"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:text="Hiện Tags"
+                android:textSize="12sp"
+                android:backgroundTint="#FFC107"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp" />
         </LinearLayout>
 
-        <!-- Container for Tags (Scrollable, Black Background, White Border) -->
         <FrameLayout
-            android:id="@+id/container_tags"
+            android:id="@+id/tag_frame_container"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:visibility="visible"
-            android:background="@drawable/bg_tags_container"
-            android:padding="4dp">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_tags"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scrollbars="vertical"
-                android:scrollbarThumbVertical="@android:color/darker_gray" />
-
-            <TextView
-                android:id="@+id/tv_no_tags"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Đang tải tags..."
-                android:textSize="12sp"
-                android:textColor="#FFFFFF"
-                android:layout_gravity="center"
-                android:gravity="center" />
-        </FrameLayout>
+                android:orientation="vertical">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="16dp" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_tags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_no_tags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Đang tải tags..."
+                    android:textSize="12sp"
+                    android:textColor="#999999" />
+            </LinearLayout>
+        </FrameLayout>
 
         <!-- Chọn File -->
         <Button

@@ -60,6 +60,7 @@ kotlin {
 
 
 dependencies {
+    implementation(files("D:\\LT_Android\\Project\\zpdk-release-v3.1.aar"))
     // Readium Android < 26
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
@@ -93,6 +94,20 @@ dependencies {
 
     // Flexbox
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    // OkHttp & Retrofit for HTTP upload
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // Available
     implementation(libs.androidx.core.ktx)

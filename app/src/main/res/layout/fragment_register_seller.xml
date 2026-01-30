@@ -3,39 +3,56 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp">
-
-    <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@android:drawable/ic_dialog_email"
-        android:layout_marginBottom="20dp"
-        android:contentDescription="Icon" />
+    android:padding="24dp"
+    android:gravity="center_horizontal">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Đăng ký làm Người Bán Sách?"
-        android:textSize="22sp"
+        android:text="ĐĂNG KÝ BÁN HÀNG"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#6200EE"
-        android:layout_marginBottom="12dp"/>
+        android:layout_marginBottom="32dp"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bạn có muốn gửi yêu cầu đến Admin để trở thành người bán sách (Seller) không?"
-        android:gravity="center"
-        android:textSize="16sp"
-        android:layout_marginBottom="30dp"/>
-
-    <Button
-        android:id="@+id/btn_send_request"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Gửi yêu cầu ngay"
-        android:backgroundTint="#018786"
+        android:hint="Tên cửa hàng / Bút danh">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_shop_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Số điện thoại Zalo liên hệ">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_zalo"
+            android:inputType="phone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Ngân hàng - STK - Tên chủ thẻ">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_bank"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/btn_submit_request"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Gửi yêu cầu"
+        android:layout_marginTop="32dp"
         android:padding="12dp"/>
 
 </LinearLayout>

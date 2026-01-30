@@ -4,60 +4,63 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.finallib.R
 import com.example.finallib.model.SellerRequest
-import com.example.finallib.model.SystemLog
+import com.example.finallib.utils.LogUtils
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Date
 
 class RegisterSellerFragment : Fragment(R.layout.fragment_register_seller) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        (activity as? AppCompatActivity)?.supportActionBar?.title = "Đăng ký bán hàng"
+        val edtShopName = view.findViewById<TextInputEditText>(R.id.edt_shop_name)
+        val edtZalo = view.findViewById<TextInputEditText>(R.id.edt_zalo)     // Mới
+        val edtBank = view.findViewById<TextInputEditText>(R.id.edt_bank)     // Mới
+        val btnSubmit = view.findViewById<Button>(R.id.btn_submit_request)
 
-        // Tìm view từ biến 'view'
-        val btnSend = view.findViewById<Button>(R.id.btn_send_request)
+        btnSubmit.setOnClickListener {
+            val shopName = edtShopName.text.toString().trim()
+            val zalo = edtZalo.text.toString().trim()
+            val bank = edtBank.text.toString().trim()
 
-        btnSend.setOnClickListener {
-            sendRequest()
+            if (shopName.isEmpty() || zalo.isEmpty() || bank.isEmpty()) {
+                Toast.makeText(context, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            submitRequest(shopName, zalo, bank)
         }
     }
 
-    private fun sendRequest() {
-        val user = FirebaseAuth.getInstance().currentUser
+    private fun submitRequest(shopName: String, zalo: String, bank: String) {
+        val user = FirebaseAuth.getInstance().currentUser ?: return
         val db = FirebaseFirestore.getInstance()
 
-        if (user != null) {
-            db.collection("users").document(user.uid).get().addOnSuccessListener { doc ->
-                val name = doc.getString("fullName") ?: "No Name"
+        // Tạo đối tượng yêu cầu với đầy đủ thông tin
+        val request = SellerRequest(
+            userId = user.uid,
+            email = user.email ?: "",
+            shopName = shopName,
+            bankInfo = bank,    // Lưu thông tin ngân hàng
+            zaloPhone = zalo,   // Lưu Zalo
+            status = "PENDING",
+            timestamp = Date()
+        )
 
-                // Tạo request object
-                val request = SellerRequest(
-                    userId = user.uid,
-                    userEmail = user.email ?: "",
-                    fullName = name,
-                    status = "PENDING"
-                )
-
-                db.collection("seller_requests").add(request)
-                    .addOnSuccessListener {
-                        // Dùng requireContext() để hiện thông báo
-                        Toast.makeText(requireContext(), "Đã gửi yêu cầu thành công!", Toast.LENGTH_SHORT).show()
-
-                        // Ghi log
-                        val log = SystemLog(user.uid, user.email?:"", name, "User", "REQUEST_SELLER", "Xin làm Seller")
-                        db.collection("system_logs").add(log)
-
-                        parentFragmentManager.popBackStack()
-                    }
-                    .addOnFailureListener {
-                        Toast.makeText(requireContext(), "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
-                    }
+        db.collection("seller_requests")
+            .add(request)
+            .addOnSuccessListener {
+                Toast.makeText(context, "Đã gửi yêu cầu thành công!", Toast.LENGTH_SHORT).show()
+                LogUtils.writeLog("REGISTER_SELLER", "Gửi đơn đăng ký shop: $shopName")
+                parentFragmentManager.popBackStack()
             }
-        }
+            .addOnFailureListener {
+                Toast.makeText(context, "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }
