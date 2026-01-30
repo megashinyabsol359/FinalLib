@@ -40,13 +40,16 @@ class PaymentActivity : AppCompatActivity() {
     private lateinit var book: Book
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var isPaymentProcessing = false // Flag để tránh duplicate processing
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_payment)
 
         val policy: StrictMode.ThreadPolicy =
-            StrictMode.ThreadPolicy.Builder().permitAll().build()
+            StrictMode.ThreadPolicy.Builder()
+                .permitAll()  // Permit tất cả để tránh violation
+                .build()
         StrictMode.setThreadPolicy(policy)
 
         // Khởi tạo ZaloPay (Sandbox)
@@ -99,12 +102,12 @@ class PaymentActivity : AppCompatActivity() {
     }
 
     private fun processPayment() {
-        val orderApi = CreateOrder()
+        val orderApi: CreateOrder = CreateOrder()
         val priceString = (book.price).toLong().toString()
-        val currentUser = auth.currentUser
 
+        val currentUser = auth.currentUser
         if (currentUser == null) {
-            Toast.makeText(this, "Vui lòng đăng nhập để mua sách", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Lỗi: Người dùng không xác định", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -114,23 +117,21 @@ class PaymentActivity : AppCompatActivity() {
             .setTitle("Đang xử lý thanh toán...")
             .setView(progressBar)
             .setCancelable(false)
-            .create()
-        dialog.show()
+            .show()
 
         try {
+            Log.d("priceString", priceString)
             val data: JSONObject = orderApi.createOrder(priceString)
+            Log.d("data", data.toString())
             val code: String = data.getString("returncode")
-
-            if (code == "1") {
+            if (code.equals("1")) {
                 val token: String = data.getString("zptranstoken")
-                
                 ZaloPaySDK.getInstance().payOrder(this, token, "demozpdk://app", object : PayOrderListener {
-                    
-                    // --- THANH TOÁN THÀNH CÔNG ---
                     override fun onPaymentSucceeded(transactionId: String?, transToken: String?, appTransId: String?) {
+                        // Thanh toán thành công, lưu thông tin purchase lên Firebase
                         lifecycleScope.launch(Dispatchers.IO) {
                             try {
-                                // 1. Lưu thông tin Purchase
+                                // Tạo object Purchase
                                 val purchase = Purchase(
                                     id = UUID.randomUUID().toString(),
                                     bookId = book.id,
@@ -139,65 +140,50 @@ class PaymentActivity : AppCompatActivity() {
                                     price = book.price,
                                     paymentMethod = "ZaloPay"
                                 )
-                                db.collection("purchases").document(purchase.id).set(purchase).await()
-
-                                // 2. (MỚI) Cập nhật doanh thu cho Seller (nếu sách này của Seller đăng)
-                                // Giả sử trong object Book có trường 'ownerId' hoặc 'userId' là người đăng sách
-                                // Nếu book chưa có trường này, bạn cần thêm vào model Book nhé.
-                                // Ở đây mình ví dụ field đó là book.userId (người đăng)
-                                if (book.sellerId.isNotEmpty()) {
-                                    val sellerRef = db.collection("sellers").document(book.sellerId)
-                                    // Cộng dồn doanh thu bằng FieldValue.increment (An toàn, tránh xung đột)
-                                    sellerRef.update("totalRevenue", FieldValue.increment(book.price.toLong()))
-                                        .addOnFailureListener { e -> Log.e("Payment", "Lỗi cập nhật doanh thu: ${e.message}") }
-                                }
 
                                 // Lưu lên Firebase
                                 db.collection("purchases")
                                     .document(purchase.id)
                                     .set(purchase)
                                     .await()
-                                
-                                
-                                // 3. (MỚI) Ghi Log hệ thống
-                                withContext(Dispatchers.Main) {
-                                    LogUtils.writeLog("PAYMENT_SUCCESS", "Mua sách '${book.title}' giá ${book.price} qua ZaloPay")
-                                }
 
-                                // 4. Thông báo và thoát
-                                withContext(Dispatchers.Main) {
+                                lifecycleScope.launch(Dispatchers.Main) {
                                     dialog.dismiss()
-                                    Toast.makeText(this@PaymentActivity, "Thanh toán thành công!", Toast.LENGTH_SHORT).show()
-                                    finish() // Quay về màn hình trước
+                                    Toast.makeText(
+                                        this@PaymentActivity,
+                                        "Thanh toán thành công!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    // Quay lại màn hình trước
+                                    finish()
                                 }
 
                             } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
+                                lifecycleScope.launch(Dispatchers.Main) {
                                     dialog.dismiss()
-                                    Toast.makeText(this@PaymentActivity, "Lỗi lưu giao dịch: ${e.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        this@PaymentActivity,
+                                        "Lỗi: ${e.message}. Vui lòng chụp lại hóa đơn để làm thủ tục khiếu nại.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                             }
                         }
                     }
 
                     override fun onPaymentCanceled(zpTransToken: String?, appTransId: String?) {
-                        dialog.dismiss()
-                        Toast.makeText(this@PaymentActivity, "Đã hủy thanh toán", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@PaymentActivity, "Thanh toán bị hủy", Toast.LENGTH_SHORT).show()
                     }
 
                     override fun onPaymentError(error: ZaloPayError?, zpTransToken: String?, appTransId: String?) {
-                        dialog.dismiss()
-                        Toast.makeText(this@PaymentActivity, "Thanh toán thất bại: ${error.toString()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@PaymentActivity, "Thanh toán thất bại", Toast.LENGTH_SHORT).show()
                     }
                 })
-            } else {
-                dialog.dismiss()
-                Toast.makeText(this, "Lỗi tạo đơn hàng ZaloPay", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
+        }
+        catch (e: Exception) {
             dialog.dismiss()
-            Toast.makeText(this, "Lỗi hệ thống: ${e.message}", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
+            Toast.makeText(this, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

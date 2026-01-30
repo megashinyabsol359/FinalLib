@@ -9,12 +9,14 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -49,6 +51,7 @@ class UploadBookDialog(
     private lateinit var etTitle: TextInputEditText
     private lateinit var etAuthor: TextInputEditText
     private lateinit var etDescription: TextInputEditText
+    private lateinit var spinnerLanguage: Spinner
     private lateinit var btnSelectFile: Button
     private lateinit var btnSelectCover: Button
     private lateinit var btnUpload: Button
@@ -73,8 +76,11 @@ class UploadBookDialog(
     private var selectedFileName: String = ""
     private var selectedCoverUri: Uri? = null
     private var selectedTags: List<String> = emptyList()
+    private var selectedLanguage: String = "Tiếng Việt"
     private var selectedAccessibility: String = "public"
     private var tagAdapter: TagAdapter? = null
+
+    private val languages = arrayOf("Tiếng Việt", "Tiếng Anh", "Tiếng Pháp", "Tiếng Đức", "Tiếng Nhật", "Tiếng Trung", "Tiếng Hàn", "Tiếng Nga")
 
     init {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -90,6 +96,7 @@ class UploadBookDialog(
         etTitle = dialog.findViewById(R.id.et_title)
         etAuthor = dialog.findViewById(R.id.et_author)
         etDescription = dialog.findViewById(R.id.et_description)
+        spinnerLanguage = dialog.findViewById(R.id.spinner_language)
         btnSelectFile = dialog.findViewById(R.id.btn_select_file)
         btnSelectCover = dialog.findViewById(R.id.btn_select_cover)
         btnUpload = dialog.findViewById(R.id.btn_upload)
@@ -109,6 +116,20 @@ class UploadBookDialog(
         headerTags = dialog.findViewById(R.id.header_tags)
         ivToggleTags = dialog.findViewById(R.id.iv_toggle_tags)
         containerTags = dialog.findViewById(R.id.container_tags)
+
+        // Setup Language Spinner
+        val languageAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, languages)
+        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerLanguage.adapter = languageAdapter
+        spinnerLanguage.setSelection(0) // Default: Tiếng Việt
+
+        spinnerLanguage.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                selectedLanguage = languages[position]
+            }
+
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
 
         // Setup FlexboxLayoutManager for Tags
         val layoutManager = FlexboxLayoutManager(context)
@@ -382,7 +403,7 @@ class UploadBookDialog(
                     status = "pending",
                     uploadedAt = System.currentTimeMillis(),
                     tags = tags,
-                    language = "Tiếng Việt",
+                    language = selectedLanguage,
                     cover = coverUrl,
                     sellerId = userId,
                     uploadedBy = currentUser?.email ?: "",
