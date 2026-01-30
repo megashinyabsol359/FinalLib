@@ -38,7 +38,7 @@ class RequestAdapter(
         
         // Gộp thông tin chi tiết vào 1 TextView
         val infoText = """
-            Người gửi: ${req.fullName}
+            Người gửi: ${req.shopName}
             Email: ${req.email}
             Zalo: ${req.zaloPhone}
             NH: ${req.bankInfo}

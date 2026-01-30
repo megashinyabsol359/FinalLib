@@ -30,6 +30,7 @@ import com.example.finallib.utils.TagItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
+import com.example.finallib.utils.LogUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -311,6 +312,9 @@ class UploadBookDialog(
                 }
             }
         }
+
+
+        LogUtils.writeLog("UPLOADBOOK", "$title được đăng lên")
     }
 
     private fun uploadCoverImage(fileUrl: String, price: Double) {

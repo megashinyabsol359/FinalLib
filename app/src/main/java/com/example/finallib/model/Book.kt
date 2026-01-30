@@ -4,6 +4,7 @@ import java.io.Serializable
 
 data class Book(
     val id: String = "",
+    val userId: String = "",
     val title: String = "",
     val author: String = "",
     val description: String = "",
