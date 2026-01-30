@@ -139,27 +139,11 @@ class BookApprovalDetailActivity : AppCompatActivity() {
                 // KHÔNG tăng read_count cho admin review
                 // KHÔNG tạo system log cho admin review
 
-                // Chuyển sang BookReaderActivity
-                PublicationReaderService.loadPublicationFromFile(this@BookApprovalDetailActivity, filePath) { result ->
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        result.onSuccess { publication ->
-                            PublicationReaderService.openReaderInFragment(
-                                publication = publication,
-                                fragmentManager = parentFragmentManager,
-                                containerId = R.id.fragment_container
-                            )
-                        }
-                        result.onFailure { error ->
-                        }
-                    }
-                }
-
-                /*
                 val intent = Intent(this@BookApprovalDetailActivity, BookReaderActivity::class.java)
                 intent.putExtra("bookTitle", book.title)
                 intent.putExtra("tempFilePath", filePath)
                 startActivity(intent)
-                */
+
 
                 // Đóng dialog
                 lifecycleScope.launch(Dispatchers.Main) {

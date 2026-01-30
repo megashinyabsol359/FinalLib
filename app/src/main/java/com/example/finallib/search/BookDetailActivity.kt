@@ -133,14 +133,21 @@ class BookDetailActivity : AppCompatActivity() {
 
     private fun checkLocalAndDownload() {
         lifecycleScope.launch {
-            val localBook = app.bookRepository.books().first().find { 
+            val localBook = app.bookRepository.books().first().find {
                 it.identifier == book.id || (it.title == book.title && it.author == book.author)
             }
             if (localBook != null) {
-                Toast.makeText(this@BookDetailActivity, "Sách đã có trong tủ sách", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@BookDetailActivity,
+                    "Sách đã có trong tủ sách",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
                 downloadBook(findViewById(R.id.btn_read))
             }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // Kiểm tra lại purchase data khi quay về từ PaymentActivity

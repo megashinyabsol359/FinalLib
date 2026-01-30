@@ -9,15 +9,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -52,18 +49,15 @@ class UploadBookDialog(
     private lateinit var etTitle: TextInputEditText
     private lateinit var etAuthor: TextInputEditText
     private lateinit var etDescription: TextInputEditText
-    private lateinit var spinnerLanguage: Spinner
     private lateinit var btnSelectFile: Button
     private lateinit var btnSelectCover: Button
     private lateinit var btnUpload: Button
     private lateinit var btnCancel: Button
-    private lateinit var btnToggleTags: Button
     private lateinit var tvSelectedFile: TextView
     private lateinit var tvUploadStatus: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var rvTags: RecyclerView
     private lateinit var tvNoTags: TextView
-    private lateinit var tagFrameContainer: FrameLayout
     private lateinit var ivBookCover: ImageView
     private lateinit var rgAccessibility: RadioGroup
     private lateinit var rbPublic: RadioButton
@@ -79,11 +73,8 @@ class UploadBookDialog(
     private var selectedFileName: String = ""
     private var selectedCoverUri: Uri? = null
     private var selectedTags: List<String> = emptyList()
-    private var selectedLanguage: String = "Tiếng Việt"
     private var selectedAccessibility: String = "public"
     private var tagAdapter: TagAdapter? = null
-    private var isTagFrameVisible: Boolean = false
-    private val languages = mutableListOf("Tiếng Việt", "Tiếng Anh", "Tiếng Pháp", "Tiếng Đức", "Tiếng Nhật", "Tiếng Trung")
 
     init {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -99,18 +90,15 @@ class UploadBookDialog(
         etTitle = dialog.findViewById(R.id.et_title)
         etAuthor = dialog.findViewById(R.id.et_author)
         etDescription = dialog.findViewById(R.id.et_description)
-        spinnerLanguage = dialog.findViewById(R.id.spinner_language)
         btnSelectFile = dialog.findViewById(R.id.btn_select_file)
         btnSelectCover = dialog.findViewById(R.id.btn_select_cover)
         btnUpload = dialog.findViewById(R.id.btn_upload)
         btnCancel = dialog.findViewById(R.id.btn_cancel)
-        btnToggleTags = dialog.findViewById(R.id.btn_toggle_tags)
         tvSelectedFile = dialog.findViewById(R.id.tv_selected_file)
         tvUploadStatus = dialog.findViewById(R.id.tv_upload_status)
         progressBar = dialog.findViewById(R.id.progress_bar)
         rvTags = dialog.findViewById(R.id.rv_tags)
         tvNoTags = dialog.findViewById(R.id.tv_no_tags)
-        tagFrameContainer = dialog.findViewById(R.id.tag_frame_container)
         ivBookCover = dialog.findViewById(R.id.iv_book_cover)
         rgAccessibility = dialog.findViewById(R.id.rg_accessibility)
         rbPublic = dialog.findViewById(R.id.rb_public)
@@ -127,10 +115,10 @@ class UploadBookDialog(
         layoutManager.flexDirection = FlexDirection.ROW
         layoutManager.flexWrap = FlexWrap.WRAP
         rvTags.layoutManager = layoutManager
-        
+
         // Fix for internal scrolling: enable nested scrolling
         rvTags.isNestedScrollingEnabled = true
-        
+
         // This is crucial to allow the RecyclerView to scroll inside the NestedScrollView
         rvTags.setOnTouchListener { v, event ->
             if (v.id == R.id.rv_tags) {
@@ -149,7 +137,7 @@ class UploadBookDialog(
             if (parentView != null) {
                 TransitionManager.beginDelayedTransition(parentView)
             }
-            
+
             if (containerTags.visibility == View.VISIBLE) {
                 containerTags.visibility = View.GONE
                 ivToggleTags.animate().rotation(180f).setDuration(200).start()
@@ -158,22 +146,6 @@ class UploadBookDialog(
                 ivToggleTags.animate().rotation(0f).setDuration(200).start()
             }
         }
-        // Setup Language Spinner
-        val languageAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, languages)
-        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerLanguage.adapter = languageAdapter
-        spinnerLanguage.setSelection(0)  // Default: Tiếng Việt
-
-        spinnerLanguage.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                selectedLanguage = languages[position]
-            }
-
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        }
-
-        // Setup RecyclerView
-        rvTags.layoutManager = LinearLayoutManager(context)
 
         // Setup RadioGroup listener for accessibility
         rgAccessibility.setOnCheckedChangeListener { _, checkedId ->
@@ -186,18 +158,6 @@ class UploadBookDialog(
                     tilPrice.visibility = View.GONE
                     "public"
                 }
-            }
-        }
-
-        // Toggle Tags Frame visibility
-        btnToggleTags.setOnClickListener {
-            isTagFrameVisible = !isTagFrameVisible
-            if (isTagFrameVisible) {
-                tagFrameContainer.visibility = View.VISIBLE
-                btnToggleTags.text = "Ẩn Tags"
-            } else {
-                tagFrameContainer.visibility = View.GONE
-                btnToggleTags.text = "Hiện Tags"
             }
         }
 
@@ -351,8 +311,7 @@ class UploadBookDialog(
                     }
                 }
 
-          result.onFailure { error ->
-                lifecycleScope.launch(Dispatchers.Main) {
+                result.onFailure { error ->
                     tvUploadStatus.text = "Lỗi: ${error.message}"
                     progressBar.visibility = View.GONE
                     btnSelectFile.isEnabled = true
@@ -423,7 +382,7 @@ class UploadBookDialog(
                     status = "pending",
                     uploadedAt = System.currentTimeMillis(),
                     tags = tags,
-                    language = selectedLanguage,
+                    language = "Tiếng Việt",
                     cover = coverUrl,
                     sellerId = userId,
                     uploadedBy = currentUser?.email ?: "",
@@ -477,7 +436,7 @@ class UploadBookDialog(
 
     fun show() {
         dialog.show()
-        
+
         // Adjust dialog width after show
         val metrics = context.resources.displayMetrics
         val width = (metrics.widthPixels * 0.95).toInt()
