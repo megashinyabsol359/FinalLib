@@ -28,6 +28,7 @@ import com.example.finallib.admin.SystemLogFragment
 import com.example.finallib.admin.AdminNotificationFragment
 import com.example.finallib.search.SearchActivity
 import com.example.finallib.admin.UserListFragment
+import com.example.finallib.bookshelf.BookshelfFragment
 import com.example.finallib.admin.BookApprovalActivity
 
 class MainActivity : AppCompatActivity() {
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
         // Menu
         navView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> replaceFragment(LibraryFragment())
+                R.id.nav_home -> replaceFragment(BookshelfFragment())
 
                 R.id.nav_upload_book -> {
                     showUploadDialog()
@@ -139,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            replaceFragment(LibraryFragment())
+            replaceFragment(BookshelfFragment())
             navView.setCheckedItem(R.id.nav_home)
         }
     }
@@ -219,10 +220,14 @@ class MainActivity : AppCompatActivity() {
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
                             menu.findItem(R.id.nav_user_list)?.isVisible = true
                             menu.findItem(R.id.nav_book_approval)?.isVisible = true
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true
                         }
+                        "Seller" -> {
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
+                        } 
                     }
                 }
         }

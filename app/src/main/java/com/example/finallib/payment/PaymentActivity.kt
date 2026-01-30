@@ -40,13 +40,16 @@ class PaymentActivity : AppCompatActivity() {
     private lateinit var book: Book
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var isPaymentProcessing = false // Flag để tránh duplicate processing
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_payment)
 
         val policy: StrictMode.ThreadPolicy =
-            StrictMode.ThreadPolicy.Builder().permitAll().build()
+            StrictMode.ThreadPolicy.Builder()
+                .permitAll()  // Permit tất cả để tránh violation
+                .build()
         StrictMode.setThreadPolicy(policy)
 
         // Khởi tạo ZaloPay (Sandbox)
@@ -120,14 +123,16 @@ class PaymentActivity : AppCompatActivity() {
         try {
             val data: JSONObject = orderApi.createOrder(priceString)
             val code: String = data.getString("returncode")
-
             if (code == "1") {
+                Log.d("Payment", "CreateOrder Successfully")
+
                 val token: String = data.getString("zptranstoken")
-                
+
                 ZaloPaySDK.getInstance().payOrder(this, token, "demozpdk://app", object : PayOrderListener {
-                    
+
                     // --- THANH TOÁN THÀNH CÔNG ---
                     override fun onPaymentSucceeded(transactionId: String?, transToken: String?, appTransId: String?) {
+                        Log.d("Payment", "PayOrder Successfully")
                         lifecycleScope.launch(Dispatchers.IO) {
                             try {
                                 // 1. Lưu thông tin Purchase
@@ -135,6 +140,7 @@ class PaymentActivity : AppCompatActivity() {
                                     id = UUID.randomUUID().toString(),
                                     bookId = book.id,
                                     userId = currentUser.uid,
+                                    sellerId = book.sellerId,
                                     purchasedAt = System.currentTimeMillis(),
                                     price = book.price,
                                     paymentMethod = "ZaloPay"
@@ -145,20 +151,13 @@ class PaymentActivity : AppCompatActivity() {
                                 // Giả sử trong object Book có trường 'ownerId' hoặc 'userId' là người đăng sách
                                 // Nếu book chưa có trường này, bạn cần thêm vào model Book nhé.
                                 // Ở đây mình ví dụ field đó là book.userId (người đăng)
-                                if (book.userId.isNotEmpty()) {
-                                    val sellerRef = db.collection("sellers").document(book.userId)
+                                if (book.sellerId.isNotEmpty()) {
+                                    val sellerRef = db.collection("users").document(book.sellerId)
                                     // Cộng dồn doanh thu bằng FieldValue.increment (An toàn, tránh xung đột)
                                     sellerRef.update("totalRevenue", FieldValue.increment(book.price.toLong()))
                                         .addOnFailureListener { e -> Log.e("Payment", "Lỗi cập nhật doanh thu: ${e.message}") }
                                 }
 
-                                // Lưu lên Firebase
-                                db.collection("purchases")
-                                    .document(purchase.id)
-                                    .set(purchase)
-                                    .await()
-                                
-                                
                                 // 3. (MỚI) Ghi Log hệ thống
                                 withContext(Dispatchers.Main) {
                                     LogUtils.writeLog("PAYMENT_SUCCESS", "Mua sách '${book.title}' giá ${book.price} qua ZaloPay")
@@ -200,6 +199,7 @@ class PaymentActivity : AppCompatActivity() {
             e.printStackTrace()
         }
     }
+
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

@@ -2,10 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
 
     <application
+        android:name=".main.Application"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -34,6 +39,107 @@
             android:name=".main.MainActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".utils.ImportActivity"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:mimeType="application/audiobook+zip" />
+                <data android:mimeType="application/audiobook+json" />
+                <data android:mimeType="application/vnd.comicbook+zip" />
+                <data android:mimeType="application/x-cbz" />
+                <data android:mimeType="application/x-cbr" />
+                <data android:mimeType="application/divina+zip" />
+                <data android:mimeType="application/divina+json" />
+                <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="application/audiobook+lcp" />
+                <data android:mimeType="application/pdf+lcp" />
+                <data android:mimeType="application/vnd.readium.lcp.license.v1.0+json" />
+                <data android:mimeType="application/lpf+zip" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/webpub+zip" />
+                <data android:mimeType="application/webpub+json" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="app" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <data android:mimeType="application/audiobook+zip" />
+                <data android:mimeType="application/audiobook+json" />
+                <data android:mimeType="application/vnd.comicbook+zip" />
+                <data android:mimeType="application/x-cbz" />
+                <data android:mimeType="application/x-cbr" />
+                <data android:mimeType="application/divina+zip" />
+                <data android:mimeType="application/divina+json" />
+                <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="application/audiobook+lcp" />
+                <data android:mimeType="application/pdf+lcp" />
+                <data android:mimeType="application/vnd.readium.lcp.license.v1.0+json" />
+                <data android:mimeType="application/lpf+zip" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/webpub+zip" />
+                <data android:mimeType="application/webpub+json" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:host="*" />
+
+                <data android:scheme="app" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <data android:mimeType="*/*" />
+
+                <data android:pathPattern=".*\\.audiobook" />
+                <data android:pathPattern=".*\\.AUDIOBOOK" />
+                <data android:pathPattern=".*\\.cbz" />
+                <data android:pathPattern=".*\\.CBZ" />
+                <data android:pathPattern=".*\\.divina" />
+                <data android:pathPattern=".*\\.DIVINA" />
+                <data android:pathPattern=".*\\.epub" />
+                <data android:pathPattern=".*\\.EPUB" />
+                <data android:pathPattern=".*\\.lcpa" />
+                <data android:pathPattern=".*\\.LCPA" />
+                <data android:pathPattern=".*\\.lcpdf" />
+                <data android:pathPattern=".*\\.LCPDF" />
+                <data android:pathPattern=".*\\.lcpl" />
+                <data android:pathPattern=".*\\.LCPL" />
+                <data android:pathPattern=".*\\.lpf" />
+                <data android:pathPattern=".*\\.LPF" />
+                <data android:pathPattern=".*\\.pdf" />
+                <data android:pathPattern=".*\\.PDF" />
+                <data android:pathPattern=".*\\.webpub" />
+                <data android:pathPattern=".*\\.WEBPUB" />
+                <data android:pathPattern=".*\\.zab" />
+                <data android:pathPattern=".*\\.ZAB" />
+                <data android:scheme="demozpdk"
+                    android:host="app" />
+            </intent-filter>
+            
+        </activity>
+
+            <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
         <activity
             android:name=".search.SearchActivity"
             android:exported="false"
@@ -64,11 +170,27 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="demozpdk"
-                    android:host="app" />
+                <data android:scheme="demozpdk" android:host="app" />
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".reader.ReaderActivity"
+            android:label="Reader" />
+
+        <service android:name=".reader.MediaService"
+            android:enabled="true"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ExportedService">
+
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService"/>
+                <action android:name="androidx.media2.session.MediaSessionService"/>
+                <action android:name="android.media.session.MediaSessionService" />
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".admin.BookApprovalActivity"

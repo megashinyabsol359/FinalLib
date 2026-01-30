@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +27,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.DecimalFormat
+import com.example.finallib.utils.PublicationReaderService
+
 
 class BookApprovalDetailActivity : AppCompatActivity() {
 
@@ -136,11 +139,11 @@ class BookApprovalDetailActivity : AppCompatActivity() {
                 // KHÔNG tăng read_count cho admin review
                 // KHÔNG tạo system log cho admin review
 
-                // Chuyển sang BookReaderActivity
                 val intent = Intent(this@BookApprovalDetailActivity, BookReaderActivity::class.java)
                 intent.putExtra("bookTitle", book.title)
                 intent.putExtra("tempFilePath", filePath)
                 startActivity(intent)
+
 
                 // Đóng dialog
                 lifecycleScope.launch(Dispatchers.Main) {
