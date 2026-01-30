@@ -1,19 +1,31 @@
-package com.example.finallib.model
+package com.example.finallib.utils
 
-import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.ServerTimestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Date
 
-data class SystemLog(
-    @DocumentId
-    val id: String = "",          // Thêm cái này để quản lý ID document
-    val userId: String = "",
-    val email: String = "",       // Đồng bộ tên này với LogUtils
-    val fullName: String = "",    // LogUtils sẽ để trống trường này (hoặc "Unknown")
-    val role: String = "",        // LogUtils sẽ để trống trường này
-    val action: String = "",
-    val details: String = "",
+object LogUtils {
+    private const val COLLECTION_LOGS = "system_logs"
 
-    @ServerTimestamp
-    val timestamp: Date? = null
-)
+    fun writeLog(action: String, details: String) {
+        val user = FirebaseAuth.getInstance().currentUser
+        
+        // Dữ liệu Log
+        val logData = hashMapOf(
+            "userId" to (user?.uid ?: "Anonymous"),
+            "email" to (user?.email ?: "Unknown"), 
+            "action" to action,
+            "details" to details,
+            "timestamp" to Date(), 
+            "fullName" to (user?.displayName ?: ""), 
+            "role" to "" 
+        )
+
+        FirebaseFirestore.getInstance()
+            .collection(COLLECTION_LOGS)
+            .add(logData)
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+            }
+    }
+}
