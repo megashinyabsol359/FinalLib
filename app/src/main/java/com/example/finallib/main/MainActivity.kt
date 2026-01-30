@@ -220,10 +220,14 @@ class MainActivity : AppCompatActivity() {
                             menu.findItem(R.id.nav_admin_noti)?.isVisible = true
                             menu.findItem(R.id.nav_user_list)?.isVisible = true
                             menu.findItem(R.id.nav_book_approval)?.isVisible = true
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
                         }
                         "User" -> {
                             menu.findItem(R.id.nav_register_seller)?.isVisible = true
                         }
+                        "Seller" -> {
+                            menu.findItem(R.id.nav_upload_book)?.isVisible = true
+                        } 
                     }
                 }
         }
