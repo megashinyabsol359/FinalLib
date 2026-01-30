@@ -95,34 +95,6 @@
                 <data android:mimeType="application/webpub+zip" />
                 <data android:mimeType="application/webpub+json" />
             </intent-filter>
-        </activity>
-
-            <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
-        <activity
-            android:name=".search.SearchActivity"
-            android:exported="false"
-            android:label="Tìm kiếm"
-            android:parentActivityName=".main.MainActivity" />
-
-        <activity
-            android:name=".search.BookDetailActivity"
-            android:exported="false"
-            android:label="Chi tiết sách"
-            android:parentActivityName=".search.SearchActivity" />
-
-        <activity
-            android:name=".search.BookReaderActivity"
-            android:exported="false"
-            android:label="Đọc sách"
-            android:parentActivityName=".search.BookDetailActivity" />
-
-        <activity
-            android:name=".payment.PaymentActivity"
-            android:exported="true"
-            android:parentActivityName=".search.BookDetailActivity"
-            android:label="Merchant Demo"
-            android:launchMode="singleTask"
-            >
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -163,6 +135,42 @@
                 <data android:pathPattern=".*\\.ZAB" />
                 <data android:scheme="demozpdk"
                     android:host="app" />
+            </intent-filter>
+            
+        </activity>
+
+            <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
+        <activity
+            android:name=".search.SearchActivity"
+            android:exported="false"
+            android:label="Tìm kiếm"
+            android:parentActivityName=".main.MainActivity" />
+
+        <activity
+            android:name=".search.BookDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết sách"
+            android:parentActivityName=".search.SearchActivity" />
+
+        <activity
+            android:name=".search.BookReaderActivity"
+            android:exported="false"
+            android:label="Đọc sách"
+            android:parentActivityName=".search.BookDetailActivity" />
+
+        <activity
+            android:name=".payment.PaymentActivity"
+            android:exported="true"
+            android:parentActivityName=".search.BookDetailActivity"
+            android:label="Merchant Demo"
+            android:launchMode="singleTask"
+            >
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="demozpdk" android:host="app" />
             </intent-filter>
 
         </activity>
