@@ -25,7 +25,6 @@ import org.readium.r2.streamer.PublicationOpener
 import com.example.finallib.data.BookRepository
 import com.example.finallib.data.model.Book
 import com.example.finallib.utils.tryOrLog
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
@@ -96,12 +95,23 @@ class Bookshelf(
         }
     }
 
+    suspend fun addPublication(
+        url: AbsoluteUrl,
+        format: Format? = null,
+        coverUrl: AbsoluteUrl? = null,
+    ): Try<Long, ImportError> {
+        return addBook(url, format, coverUrl)
+    }
+
     private suspend fun addBookFeedback(
         retrieverResult: Try<PublicationRetriever.Result, ImportError>,
     ) {
         retrieverResult
-            .map { addBook(it.publication.toUrl(), it.format, it.coverUrl) }
-            .onSuccess { channel.send(Event.ImportPublicationSuccess) }
+            .onSuccess { result ->
+                addBook(result.publication.toUrl(), result.format, result.coverUrl)
+                    .onSuccess { channel.send(Event.ImportPublicationSuccess) }
+                    .onFailure { channel.send(Event.ImportPublicationError(it)) }
+            }
             .onFailure { channel.send(Event.ImportPublicationError(it)) }
     }
 
@@ -119,7 +129,7 @@ class Bookshelf(
         url: AbsoluteUrl,
         format: Format? = null,
         coverUrl: AbsoluteUrl? = null,
-    ): Try<Unit, ImportError> {
+    ): Try<Long, ImportError> {
         val asset =
             if (format == null) {
                 assetRetriever.retrieve(url)
@@ -131,43 +141,45 @@ class Bookshelf(
                 )
             }
 
-        publicationOpener.open(
+        val publication = publicationOpener.open(
             asset,
             allowUserInteraction = false
-        ).onSuccess { publication ->
-            val coverFile =
-                coverStorage.storeCover(publication, coverUrl)
-                    .getOrElse {
-                        return Try.failure(
-                            ImportError.FileSystem(
-                                FileSystemError.IO(it)
-                            )
-                        )
-                    }
-
-            val id = bookRepository.insertBook(
-                url,
-                asset.format.mediaType,
-                publication,
-                coverFile
+        ).getOrElse {
+            Timber.e("Cannot open publication: $it.")
+            return Try.failure(
+                ImportError.Publication(PublicationError(it))
             )
-            if (id == -1L) {
-                coverFile.delete()
+        }
+
+        val coverFile = coverStorage.storeCover(publication, coverUrl)
+            .getOrElse {
+                publication.close()
                 return Try.failure(
-                    ImportError.Database(
-                        DebugError("Could not insert book into database.")
+                    ImportError.FileSystem(
+                        FileSystemError.IO(it)
                     )
                 )
             }
-        }
-            .onFailure {
-                Timber.e("Cannot open publication: $it.")
-                return Try.failure(
-                    ImportError.Publication(PublicationError(it))
-                )
-            }
 
-        return Try.success(Unit)
+        val id = bookRepository.insertBook(
+            url,
+            asset.format.mediaType,
+            publication,
+            coverFile
+        )
+
+        publication.close()
+
+        return if (id != -1L) {
+            Try.success(id)
+        } else {
+            coverFile.delete()
+            Try.failure(
+                ImportError.Database(
+                    DebugError("Could not insert book into database.")
+                )
+            )
+        }
     }
 
     suspend fun deleteBook(book: Book) {

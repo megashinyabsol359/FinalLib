@@ -3,7 +3,7 @@ package com.example.finallib.search
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 import com.example.finallib.model.Tag
@@ -18,58 +18,41 @@ class TagFilterAdapter(
     private val onTagFilterChanged: () -> Unit
 ) : RecyclerView.Adapter<TagFilterAdapter.TagFilterViewHolder>() {
 
-    class TagFilterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val btnTag: Button = itemView as Button
+    class TagFilterViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvTag: TextView = view.findViewById(R.id.tv_tag_filter_name)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagFilterViewHolder {
-        val button = Button(parent.context).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            setPadding(12, 12, 12, 12)
-            textSize = 13f
-            setTextColor(parent.context.getColor(android.R.color.black))
-            background = parent.context.getDrawable(R.drawable.tag_button_background)
-        }
-        return TagFilterViewHolder(button)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_tag_filter, parent, false)
+        return TagFilterViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TagFilterViewHolder, position: Int) {
         val tagItem = tagList[position]
-        holder.btnTag.text = tagItem.tag.label
-        updateButtonState(holder.btnTag, tagItem)
+        holder.tvTag.text = tagItem.tag.label
+        updateButtonState(holder.tvTag, tagItem)
 
-        holder.btnTag.setOnClickListener {
+        holder.tvTag.setOnClickListener {
             tagItem.state = (tagItem.state + 1) % 3
-            updateButtonState(holder.btnTag, tagItem)
+            updateButtonState(holder.tvTag, tagItem)
             onTagFilterChanged()
         }
     }
 
-    private fun updateButtonState(button: Button, tagItem: TagFilterItem) {
+    private fun updateButtonState(textView: TextView, tagItem: TagFilterItem) {
         when (tagItem.state) {
             0 -> {
-                // Normal state
-                button.isSelected = false
-                button.tag = 0
-                button.setBackgroundResource(R.drawable.tag_button_normal)
-                button.setTextColor(button.context.getColor(android.R.color.black))
+                textView.setBackgroundResource(R.drawable.tag_button_normal)
+                textView.setTextColor(textView.context.getColor(android.R.color.black))
             }
             1 -> {
-                // Include state (Green)
-                button.isSelected = true
-                button.tag = 1
-                button.setBackgroundResource(R.drawable.tag_button_include)
-                button.setTextColor(button.context.getColor(android.R.color.black))
+                textView.setBackgroundResource(R.drawable.tag_button_include)
+                textView.setTextColor(textView.context.getColor(android.R.color.black))
             }
             2 -> {
-                // Exclude state (Red)
-                button.isSelected = false
-                button.tag = 2
-                button.setBackgroundResource(R.drawable.tag_button_exclude)
-                button.setTextColor(button.context.getColor(android.R.color.black))
+                textView.setBackgroundResource(R.drawable.tag_button_exclude)
+                textView.setTextColor(textView.context.getColor(android.R.color.black))
             }
         }
     }

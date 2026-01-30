@@ -92,6 +92,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
+    // Flexbox
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
     // OkHttp & Retrofit for HTTP upload
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -110,7 +112,7 @@ dependencies {
     // Available
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(platform(libs.androidx.compose.bom))
+    platform(libs.androidx.compose.bom)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     testImplementation(libs.junit)
