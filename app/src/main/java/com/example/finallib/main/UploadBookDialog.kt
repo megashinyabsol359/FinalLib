@@ -1,21 +1,26 @@
 package com.example.finallib.main
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.net.Uri
+import android.transition.TransitionManager
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
-import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
+import com.bumptech.glide.Glide
 import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Tag
@@ -23,12 +28,13 @@ import com.example.finallib.utils.CloudinaryUploadService
 import com.example.finallib.utils.FirebaseService
 import com.example.finallib.utils.TagAdapter
 import com.example.finallib.utils.TagItem
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.bumptech.glide.Glide
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -59,6 +65,10 @@ class UploadBookDialog(
     private lateinit var tilPrice: TextInputLayout
     private lateinit var etPrice: TextInputEditText
 
+    private lateinit var headerTags: LinearLayout
+    private lateinit var ivToggleTags: ImageView
+    private lateinit var containerTags: View
+
     private var selectedFileUri: Uri? = null
     private var selectedFileName: String = ""
     private var selectedCoverUri: Uri? = null
@@ -67,16 +77,14 @@ class UploadBookDialog(
     private var tagAdapter: TagAdapter? = null
 
     init {
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         setupDialog()
         loadTags()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupDialog() {
         dialog.setContentView(R.layout.dialog_upload_book_new)
-        dialog.window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.95).toInt(),
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
 
         // Bind views
         etTitle = dialog.findViewById(R.id.et_title)
@@ -98,11 +106,46 @@ class UploadBookDialog(
         tilPrice = dialog.findViewById(R.id.til_price)
         etPrice = dialog.findViewById(R.id.et_price)
 
+        headerTags = dialog.findViewById(R.id.header_tags)
+        ivToggleTags = dialog.findViewById(R.id.iv_toggle_tags)
+        containerTags = dialog.findViewById(R.id.container_tags)
+
         // Setup FlexboxLayoutManager for Tags
         val layoutManager = FlexboxLayoutManager(context)
         layoutManager.flexDirection = FlexDirection.ROW
         layoutManager.flexWrap = FlexWrap.WRAP
         rvTags.layoutManager = layoutManager
+        
+        // Fix for internal scrolling: enable nested scrolling
+        rvTags.isNestedScrollingEnabled = true
+        
+        // This is crucial to allow the RecyclerView to scroll inside the NestedScrollView
+        rvTags.setOnTouchListener { v, event ->
+            if (v.id == R.id.rv_tags) {
+                v.parent.requestDisallowInterceptTouchEvent(true)
+                if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
+
+        // Toggle tags visibility logic - FIXED CRASH
+        headerTags.setOnClickListener {
+            // Safely find the container to animate
+            val parentView = containerTags.parent as? ViewGroup
+            if (parentView != null) {
+                TransitionManager.beginDelayedTransition(parentView)
+            }
+            
+            if (containerTags.visibility == View.VISIBLE) {
+                containerTags.visibility = View.GONE
+                ivToggleTags.animate().rotation(180f).setDuration(200).start()
+            } else {
+                containerTags.visibility = View.VISIBLE
+                ivToggleTags.animate().rotation(0f).setDuration(200).start()
+            }
+        }
 
         // Setup RadioGroup listener for accessibility
         rgAccessibility.setOnCheckedChangeListener { _, checkedId ->
@@ -153,7 +196,7 @@ class UploadBookDialog(
                 lifecycleScope.launch(Dispatchers.Main) {
                     if (tags.isEmpty()) {
                         tvNoTags.text = "Không có tags trong hệ thống"
-                        rvTags.visibility = View.GONE
+                        containerTags.visibility = View.GONE
                     } else {
                         tvNoTags.visibility = View.GONE
                         tagAdapter = TagAdapter(tags) { selectedTagsList ->
@@ -393,6 +436,11 @@ class UploadBookDialog(
 
     fun show() {
         dialog.show()
+        
+        // Adjust dialog width after show
+        val metrics = context.resources.displayMetrics
+        val width = (metrics.widthPixels * 0.95).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     fun dismiss() {

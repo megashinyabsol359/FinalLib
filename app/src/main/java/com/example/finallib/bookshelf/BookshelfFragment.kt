@@ -10,6 +10,8 @@ import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -112,10 +114,28 @@ class BookshelfFragment : Fragment() {
                 )
             )
         }
+
+        // Setup Search
+        binding.bookshelfSearchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+                binding.bookshelfSearchClearBtn.visibility = if (query.isEmpty()) View.GONE else View.VISIBLE
+                filterBooks(query)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        binding.bookshelfSearchClearBtn.setOnClickListener {
+            binding.bookshelfSearchEditText.text.clear()
+        }
+
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 bookshelfViewModel.books.collectLatest {
                     bookshelfAdapter.submitList(it)
+                    // Apply current search filter if any
+                    filterBooks(binding.bookshelfSearchEditText.text.toString())
                 }
             }
         }
@@ -138,6 +158,19 @@ class BookshelfFragment : Fragment() {
                     selected = which
                 }
                 .show()
+        }
+    }
+
+    private fun filterBooks(query: String) {
+        val allBooks = bookshelfViewModel.books.value
+        if (query.isEmpty()) {
+            bookshelfAdapter.submitList(allBooks)
+        } else {
+            val filtered = allBooks.filter { 
+                it.title?.contains(query, ignoreCase = true) == true || 
+                it.author?.contains(query, ignoreCase = true) == true 
+            }
+            bookshelfAdapter.submitList(filtered)
         }
     }
 

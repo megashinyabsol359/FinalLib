@@ -11,13 +11,15 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.finallib.R
 import com.example.finallib.model.Book
 import com.example.finallib.model.Tag
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
 
 class SearchActivity : AppCompatActivity() {
 
@@ -64,9 +66,8 @@ class SearchActivity : AppCompatActivity() {
         rvSearchResults.layoutManager = LinearLayoutManager(this)
         rvSearchResults.adapter = bookAdapter
 
-        // Setup RecyclerView Tags with GridLayoutManager (3 columns)
+        // Setup RecyclerView Tags with FlexboxLayoutManager
         tagFilterAdapter = TagFilterAdapter(tagFilterList) {
-            // Khi tag filter thay đổi, tự động load lại danh sách sách
             val keyword = etSearch.text.toString().trim()
             if (keyword.isNotEmpty()) {
                 searchBooks(keyword)
@@ -74,7 +75,10 @@ class SearchActivity : AppCompatActivity() {
                 loadDefaultBooks()
             }
         }
-        rvTagFilters.layoutManager = GridLayoutManager(this, 2)
+        val flexboxLayoutManager = FlexboxLayoutManager(this)
+        flexboxLayoutManager.flexDirection = FlexDirection.ROW
+        flexboxLayoutManager.flexWrap = FlexWrap.WRAP
+        rvTagFilters.layoutManager = flexboxLayoutManager
         rvTagFilters.adapter = tagFilterAdapter
 
         // Fetch danh sách tags
@@ -84,7 +88,6 @@ class SearchActivity : AppCompatActivity() {
         btnToggleTagFilter.setOnClickListener {
             isTagFilterVisible = !isTagFilterVisible
             if (isTagFilterVisible) {
-                tagFilterContainer.layoutParams.height = 600 // Tăng chiều cao
                 tagFilterContainer.visibility = FrameLayout.VISIBLE
                 btnToggleTagFilter.text = "Ẩn bộ lọc tags"
             } else {
@@ -98,18 +101,15 @@ class SearchActivity : AppCompatActivity() {
             if (searchKeyword.isNotEmpty()) {
                 searchBooks(searchKeyword)
             } else {
-                // Hiển thị 15-20 sách ngẫu nhiên khi không có keyword
                 loadDefaultBooks()
             }
         }
 
-        // Tìm kiếm khi nhấn Enter trên bàn phím
         etSearch.setOnEditorActionListener { _, _, _ ->
             btnSearch.performClick()
             true
         }
 
-        // Setup Language Spinner
         fetchLanguages()
 
         spinnerLanguage.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -126,7 +126,6 @@ class SearchActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
 
-        // Load sách mặc định lúc khởi động
         loadDefaultBooks()
     }
 
@@ -186,12 +185,10 @@ class SearchActivity : AppCompatActivity() {
                 for (document in documents) {
                     val book = document.toObject(Book::class.java)
 
-                    // Filter theo ngôn ngữ
                     if (selectedLanguage.isNotEmpty() && book.language != selectedLanguage) {
                         continue
                     }
 
-                    // Áp dụng include tags filter
                     if (includedTags.isNotEmpty()) {
                         val hasIncludedTag = includedTags.any { includedTag ->
                             book.tags.any { it.equals(includedTag, ignoreCase = true) }
@@ -199,7 +196,6 @@ class SearchActivity : AppCompatActivity() {
                         if (!hasIncludedTag) continue
                     }
 
-                    // Áp dụng exclude tags filter
                     if (excludedTags.isNotEmpty()) {
                         val hasExcludedTag = excludedTags.any { excludedTag ->
                             book.tags.any { it.equals(excludedTag, ignoreCase = true) }
@@ -246,12 +242,10 @@ class SearchActivity : AppCompatActivity() {
                 for (document in documents) {
                     val book = document.toObject(Book::class.java)
 
-                    // Filter theo ngôn ngữ
                     if (selectedLanguage.isNotEmpty() && book.language != selectedLanguage) {
                         continue
                     }
 
-                    // Tìm kiếm theo tiêu đề, tác giả, ngôn ngữ hoặc tags
                     val matchesKeyword = book.title.contains(keyword, ignoreCase = true) ||
                         book.author.contains(keyword, ignoreCase = true) ||
                         book.language.contains(keyword, ignoreCase = true) ||
@@ -259,7 +253,6 @@ class SearchActivity : AppCompatActivity() {
 
                     if (!matchesKeyword) continue
 
-                    // Áp dụng include tags filter
                     if (includedTags.isNotEmpty()) {
                         val hasIncludedTag = includedTags.any { includedTag ->
                             book.tags.any { it.equals(includedTag, ignoreCase = true) }
@@ -267,7 +260,6 @@ class SearchActivity : AppCompatActivity() {
                         if (!hasIncludedTag) continue
                     }
 
-                    // Áp dụng exclude tags filter
                     if (excludedTags.isNotEmpty()) {
                         val hasExcludedTag = excludedTags.any { excludedTag ->
                             book.tags.any { it.equals(excludedTag, ignoreCase = true) }
@@ -303,4 +295,3 @@ class SearchActivity : AppCompatActivity() {
         return true
     }
 }
-

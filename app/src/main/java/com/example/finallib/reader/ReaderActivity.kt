@@ -54,6 +54,7 @@ open class ReaderActivity : AppCompatActivity() {
 
         // Add this line to set the toolbar
         setSupportActionBar(binding.readerToolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         this.binding = binding
 
@@ -76,6 +77,7 @@ open class ReaderActivity : AppCompatActivity() {
             OutlineContract.REQUEST_KEY,
             this,
             FragmentResultListener { _, result ->
+                 reconfigureActionBar()
                 val locator = OutlineContract.parseResult(result).destination
                 closeOutlineFragment(locator)
             }
@@ -130,15 +132,10 @@ open class ReaderActivity : AppCompatActivity() {
         title = when (currentFragment) {
             is OutlineFragment -> model.publication.metadata.title
             is DrmManagementFragment -> getString(R.string.title_fragment_drm_management)
-            else -> null
+            else -> model.publication.metadata.title
         }
 
-        supportActionBar!!.setDisplayHomeAsUpEnabled(
-            when (currentFragment) {
-                is OutlineFragment, is DrmManagementFragment -> true
-                else -> false
-            }
-        )
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun handleReaderFragmentEvent(command: ReaderViewModel.ActivityCommand) {
@@ -158,7 +155,7 @@ open class ReaderActivity : AppCompatActivity() {
         supportFragmentManager.commit {
             add(
                 R.id.activity_container,
-                OutlineFragment::class.java,
+                 OutlineFragment::class.java,
                 Bundle(),
                 OUTLINE_FRAGMENT_TAG
             )
@@ -188,7 +185,11 @@ open class ReaderActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
-                supportFragmentManager.popBackStack()
+                if (supportFragmentManager.backStackEntryCount > 0) {
+                    supportFragmentManager.popBackStack()
+                } else {
+                    finish()
+                }
                 return true
             }
         }
