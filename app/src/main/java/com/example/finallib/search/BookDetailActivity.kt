@@ -3,6 +3,7 @@ package com.example.finallib.search
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -96,7 +97,7 @@ class BookDetailActivity : AppCompatActivity() {
         rvReviews.adapter = reviewAdapter
 
         btnRead.setOnClickListener {
-            checkLocalAndRead()
+            checkLocalAndDownload()
         }
 
         btnRating.setOnClickListener {
@@ -106,32 +107,37 @@ class BookDetailActivity : AppCompatActivity() {
         // Fetch reviews
         fetchReviews(rvReviews, tvNoReviews)
 
+        // Check if book is already downloaded
+        checkDownloadStatus(btnRead)
+
         // Check access for private books
         if (book.accessibility == "private") {
             checkAndSetupPrivateBookAccess(btnRead)
         }
     }
 
-    private fun checkLocalAndRead() {
+    private fun checkDownloadStatus(btnAction: Button) {
         lifecycleScope.launch {
             val localBook = app.bookRepository.books().first().find { 
                 it.identifier == book.id || (it.title == book.title && it.author == book.author)
             }
             if (localBook != null) {
-                openReader(localBook.id!!)
-            } else {
-                downloadAndReadBook()
+                btnAction.text = "Đã tải sách"
+                btnAction.isEnabled = false
+                btnAction.setBackgroundColor(resources.getColor(android.R.color.darker_gray))
             }
         }
     }
 
-    private fun openReader(bookId: Long) {
+    private fun checkLocalAndDownload() {
         lifecycleScope.launch {
-            app.readerRepository.open(bookId).onSuccess {
-                val intent = ReaderActivityContract().createIntent(this@BookDetailActivity, ReaderActivityContract.Arguments(bookId))
-                startActivity(intent)
-            }.onFailure {
-                Toast.makeText(this@BookDetailActivity, "Không thể mở sách", Toast.LENGTH_SHORT).show()
+            val localBook = app.bookRepository.books().first().find { 
+                it.identifier == book.id || (it.title == book.title && it.author == book.author)
+            }
+            if (localBook != null) {
+                Toast.makeText(this@BookDetailActivity, "Sách đã có trong tủ sách", Toast.LENGTH_SHORT).show()
+            } else {
+                downloadBook(findViewById(R.id.btn_read))
             }
         }
     }
@@ -233,7 +239,7 @@ class BookDetailActivity : AppCompatActivity() {
         return true
     }
 
-    private fun downloadAndReadBook() {
+    private fun downloadBook(btnAction: Button) {
         if (book.url.isEmpty()) {
             Toast.makeText(this, "Sách này không có file để tải", Toast.LENGTH_SHORT).show()
             return
@@ -273,8 +279,10 @@ class BookDetailActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     dialog.dismiss()
                     importResult.onSuccess { bookId ->
-                        Toast.makeText(this@BookDetailActivity, "Sách tải thành công", Toast.LENGTH_SHORT).show()
-                        openReader(bookId)
+                        Toast.makeText(this@BookDetailActivity, "Sách tải thành công. Vui lòng vào Tủ sách để đọc.", Toast.LENGTH_LONG).show()
+                        btnAction.text = "Đã tải sách"
+                        btnAction.isEnabled = false
+                        btnAction.setBackgroundColor(resources.getColor(android.R.color.darker_gray))
                     }.onFailure {
                         Toast.makeText(this@BookDetailActivity, "Lỗi khi nhập sách vào thư viện: ${it.message}", Toast.LENGTH_LONG).show()
                     }
@@ -315,12 +323,14 @@ class BookDetailActivity : AppCompatActivity() {
                         // User hasn't purchased, show purchase button
                         setupPurchaseButton(btnRead)
                     } else {
-                        // User has purchased, keep read button
-                        btnRead.text = "Đọc sách"
+                        // User has purchased, keep download action
+                        btnRead.text = "Tải sách"
                         btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
                         btnRead.setOnClickListener {
-                            checkLocalAndRead()
+                            checkLocalAndDownload()
                         }
+                        // Re-check if already downloaded to disable
+                        checkDownloadStatus(btnRead)
                     }
                 }
             } catch (e: Exception) {
@@ -376,12 +386,13 @@ class BookDetailActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
 
-                    // Change button back to read
-                    btnRead.text = "Đọc sách"
+                    // Change button to download
+                    btnRead.text = "Tải sách"
                     btnRead.setBackgroundColor(resources.getColor(android.R.color.holo_purple))
                     btnRead.setOnClickListener {
-                        checkLocalAndRead()
+                        checkLocalAndDownload()
                     }
+                    checkDownloadStatus(btnRead)
                 }
             } catch (e: Exception) {
                 lifecycleScope.launch(Dispatchers.Main) {

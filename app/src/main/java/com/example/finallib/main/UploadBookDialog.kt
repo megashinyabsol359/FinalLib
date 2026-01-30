@@ -13,7 +13,6 @@ import android.widget.Toast
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.LifecycleCoroutineScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -27,6 +26,9 @@ import com.example.finallib.utils.TagItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -96,8 +98,11 @@ class UploadBookDialog(
         tilPrice = dialog.findViewById(R.id.til_price)
         etPrice = dialog.findViewById(R.id.et_price)
 
-        // Setup RecyclerView
-        rvTags.layoutManager = LinearLayoutManager(context)
+        // Setup FlexboxLayoutManager for Tags
+        val layoutManager = FlexboxLayoutManager(context)
+        layoutManager.flexDirection = FlexDirection.ROW
+        layoutManager.flexWrap = FlexWrap.WRAP
+        rvTags.layoutManager = layoutManager
 
         // Setup RadioGroup listener for accessibility
         rgAccessibility.setOnCheckedChangeListener { _, checkedId ->
@@ -148,9 +153,9 @@ class UploadBookDialog(
                 lifecycleScope.launch(Dispatchers.Main) {
                     if (tags.isEmpty()) {
                         tvNoTags.text = "Không có tags trong hệ thống"
-                        rvTags.visibility = android.view.View.GONE
+                        rvTags.visibility = View.GONE
                     } else {
-                        tvNoTags.visibility = android.view.View.GONE
+                        tvNoTags.visibility = View.GONE
                         tagAdapter = TagAdapter(tags) { selectedTagsList ->
                             selectedTags = selectedTagsList
                         }
@@ -240,7 +245,7 @@ class UploadBookDialog(
         btnSelectFile.isEnabled = false
         btnSelectCover.isEnabled = false
         btnUpload.isEnabled = false
-        progressBar.visibility = android.view.View.VISIBLE
+        progressBar.visibility = View.VISIBLE
         tvUploadStatus.text = "Đang upload file lên Cloudinary..."
 
         // Start upload
@@ -251,21 +256,21 @@ class UploadBookDialog(
                 fileName = selectedFileName
             )
 
-            result.onSuccess { uploadedUrl ->
-                // Nếu có ảnh bìa, upload ảnh bìa trước
-                if (selectedCoverUri != null) {
-                    uploadCoverImage(uploadedUrl, price)
-                } else {
-                    saveBookToDatabase(
-                        title, author, description, selectedTags, uploadedUrl, "", selectedAccessibility, price
-                    )
+            lifecycleScope.launch(Dispatchers.Main) {
+                result.onSuccess { uploadedUrl ->
+                    // Nếu có ảnh bìa, upload ảnh bìa trước
+                    if (selectedCoverUri != null) {
+                        uploadCoverImage(uploadedUrl, price)
+                    } else {
+                        saveBookToDatabase(
+                            title, author, description, selectedTags, uploadedUrl, "", selectedAccessibility, price
+                        )
+                    }
                 }
-            }
 
-            result.onFailure { error ->
-                lifecycleScope.launch(Dispatchers.Main) {
+                result.onFailure { error ->
                     tvUploadStatus.text = "Lỗi: ${error.message}"
-                    progressBar.visibility = android.view.View.GONE
+                    progressBar.visibility = View.GONE
                     btnSelectFile.isEnabled = true
                     btnSelectCover.isEnabled = true
                     btnUpload.isEnabled = true
@@ -285,23 +290,23 @@ class UploadBookDialog(
                 fileName = "cover_" + System.currentTimeMillis()
             )
 
-            result.onSuccess { coverUrl ->
-                saveBookToDatabase(
-                    etTitle.text.toString().trim(),
-                    etAuthor.text.toString().trim(),
-                    etDescription.text.toString().trim(),
-                    selectedTags,
-                    fileUrl,
-                    coverUrl,
-                    selectedAccessibility,
-                    price
-                )
-            }
+            lifecycleScope.launch(Dispatchers.Main) {
+                result.onSuccess { coverUrl ->
+                    saveBookToDatabase(
+                        etTitle.text.toString().trim(),
+                        etAuthor.text.toString().trim(),
+                        etDescription.text.toString().trim(),
+                        selectedTags,
+                        fileUrl,
+                        coverUrl,
+                        selectedAccessibility,
+                        price
+                    )
+                }
 
-            result.onFailure { error ->
-                lifecycleScope.launch(Dispatchers.Main) {
+                result.onFailure { error ->
                     tvUploadStatus.text = "Lỗi upload ảnh bìa: ${error.message}"
-                    progressBar.visibility = android.view.View.GONE
+                    progressBar.visibility = View.GONE
                     btnSelectFile.isEnabled = true
                     btnSelectCover.isEnabled = true
                     btnUpload.isEnabled = true
@@ -344,10 +349,10 @@ class UploadBookDialog(
 
                 val result = FirebaseService.uploadBookData(newBook)
 
-                result.onSuccess { docId ->
-                    lifecycleScope.launch(Dispatchers.Main) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    result.onSuccess { docId ->
                         tvUploadStatus.text = "✅ Upload thành công!"
-                        progressBar.visibility = android.view.View.GONE
+                        progressBar.visibility = View.GONE
                         Toast.makeText(
                             context,
                             "Sách đã được upload thành công",
@@ -360,12 +365,10 @@ class UploadBookDialog(
                             dismiss()
                         }, 1500)
                     }
-                }
 
-                result.onFailure { error ->
-                    lifecycleScope.launch(Dispatchers.Main) {
+                    result.onFailure { error ->
                         tvUploadStatus.text = "Lỗi: ${error.message}"
-                        progressBar.visibility = android.view.View.GONE
+                        progressBar.visibility = View.GONE
                         btnSelectFile.isEnabled = true
                         btnSelectCover.isEnabled = true
                         btnUpload.isEnabled = true
@@ -379,7 +382,7 @@ class UploadBookDialog(
             } catch (e: Exception) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     tvUploadStatus.text = "Lỗi: ${e.message}"
-                    progressBar.visibility = android.view.View.GONE
+                    progressBar.visibility = View.GONE
                     btnSelectFile.isEnabled = true
                     btnSelectCover.isEnabled = true
                     btnUpload.isEnabled = true

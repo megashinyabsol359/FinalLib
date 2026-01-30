@@ -91,10 +91,13 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
+    // Flexbox
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
+
     // Available
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(platform(libs.androidx.compose.bom))
+    platform(libs.androidx.compose.bom)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     testImplementation(libs.junit)
