@@ -145,8 +145,8 @@ class PaymentActivity : AppCompatActivity() {
                                 // Giả sử trong object Book có trường 'ownerId' hoặc 'userId' là người đăng sách
                                 // Nếu book chưa có trường này, bạn cần thêm vào model Book nhé.
                                 // Ở đây mình ví dụ field đó là book.userId (người đăng)
-                                if (book.userId.isNotEmpty()) {
-                                    val sellerRef = db.collection("sellers").document(book.userId)
+                                if (book.sellerId.isNotEmpty()) {
+                                    val sellerRef = db.collection("sellers").document(book.sellerId)
                                     // Cộng dồn doanh thu bằng FieldValue.increment (An toàn, tránh xung đột)
                                     sellerRef.update("totalRevenue", FieldValue.increment(book.price.toLong()))
                                         .addOnFailureListener { e -> Log.e("Payment", "Lỗi cập nhật doanh thu: ${e.message}") }
