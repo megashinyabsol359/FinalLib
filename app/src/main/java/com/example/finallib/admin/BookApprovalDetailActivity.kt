@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +27,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.DecimalFormat
+import com.example.finallib.utils.PublicationReaderService
+
 
 class BookApprovalDetailActivity : AppCompatActivity() {
 
@@ -137,10 +140,26 @@ class BookApprovalDetailActivity : AppCompatActivity() {
                 // KHÔNG tạo system log cho admin review
 
                 // Chuyển sang BookReaderActivity
+                PublicationReaderService.loadPublicationFromFile(this@BookApprovalDetailActivity, filePath) { result ->
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        result.onSuccess { publication ->
+                            PublicationReaderService.openReaderInFragment(
+                                publication = publication,
+                                fragmentManager = parentFragmentManager,
+                                containerId = R.id.fragment_container
+                            )
+                        }
+                        result.onFailure { error ->
+                        }
+                    }
+                }
+
+                /*
                 val intent = Intent(this@BookApprovalDetailActivity, BookReaderActivity::class.java)
                 intent.putExtra("bookTitle", book.title)
                 intent.putExtra("tempFilePath", filePath)
                 startActivity(intent)
+                */
 
                 // Đóng dialog
                 lifecycleScope.launch(Dispatchers.Main) {

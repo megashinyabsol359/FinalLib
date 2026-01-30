@@ -145,6 +145,7 @@
                 <data android:mimeType="application/webpub+zip" />
                 <data android:mimeType="application/webpub+json" />
             </intent-filter>
+        </activity>
 
             <!-- Works when an app doesn't know the media type, e.g. Dropbox -->
         <activity
@@ -234,25 +235,7 @@
             </intent-filter>
         </service>
 
-
         <activity
-            android:name=".search.SearchActivity"
-            android:exported="false"
-            android:label="Tìm kiếm"
-            android:parentActivityName=".main.MainActivity" />
-
-        <activity
-            android:name=".search.BookDetailActivity"
-            android:exported="false"
-            android:label="Chi tiết sách"
-            android:parentActivityName=".search.SearchActivity" />
-
-        <activity
-            android:name=".search.BookReaderActivity"
-            android:exported="false"
-            android:label="Đọc sách"
-            android:parentActivityName=".search.BookDetailActivity" />
-
             android:name=".admin.BookApprovalActivity"
             android:exported="false"
             android:label="Duyệt Sách Upload"

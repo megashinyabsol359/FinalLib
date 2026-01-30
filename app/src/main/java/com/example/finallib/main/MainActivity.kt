@@ -106,15 +106,6 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, SearchActivity::class.java))
                 }
 
-                R.id.nav_upload_book -> {
-                    showUploadDialog()
-                }
-
-                // Tìm kiếm
-                R.id.nav_search -> {
-                    startActivity(Intent(this, SearchActivity::class.java))
-                }
-
                 // User: Đăng ký bán hàng
                 R.id.nav_register_seller -> replaceFragment(RegisterSellerFragment())
 
@@ -163,33 +154,6 @@ class MainActivity : AppCompatActivity() {
         transaction.commit()
     }
         
-    private fun showUploadDialog() {
-        uploadDialog = UploadBookDialog(
-            context = this,
-            lifecycleScope = lifecycleScope,
-            fileLauncher = filePickerLauncher,
-            onSuccess = { docId ->
-                // Callback khi upload thành công
-            }
-        )
-        uploadDialog?.show()
-    }
-
-    private fun getFileNameFromUri(uri: Uri): String {
-        var fileName = "book_file"
-        try {
-            val cursor = contentResolver.query(uri, null, null, null, null)
-            cursor?.use {
-                val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                it.moveToFirst()
-                fileName = it.getString(nameIndex)
-            }
-        } catch (e: Exception) {
-            fileName = uri.lastPathSegment ?: "book_file"
-        }
-        return fileName
-    }
-
     private fun showUploadDialog() {
         uploadDialog = UploadBookDialog(
             context = this,
