@@ -217,7 +217,7 @@ class BookshelfFragment : Fragment() {
     }
     
     private fun downloadAndOpenRemoteBook(book: Book) {
-        val fileName = "${book.identifier}_${book.title?.replace(" ", "_")}.epub"
+        val fileName = "${book.identifier}_${book.title?.replace(" ", "_")}"
         
         Toast.makeText(requireContext(), "Đang tải sách: ${book.title}", Toast.LENGTH_SHORT).show()
         

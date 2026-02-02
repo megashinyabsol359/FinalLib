@@ -127,7 +127,7 @@ class BookApprovalDetailActivity : AppCompatActivity() {
 
         // Download file
         lifecycleScope.launch(Dispatchers.IO) {
-            val fileName = "${book.id}_${book.title.replace(" ", "_")}.epub"
+            val fileName = "${book.id}_${book.title.replace(" ", "_")}"
             
             val result = FileDownloadService.downloadFile(
                 context = this@BookApprovalDetailActivity,
